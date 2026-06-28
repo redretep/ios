@@ -1148,7 +1148,8 @@
         'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: './apps/app-store.html', custom: false },
         'safari': { id: 'safari', name: 'Safari', icon: './public/images/Icon=Safari.png', url: 'https://www.google.com/search?igu=1', custom: false },
         'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://chat.pidi.workers.dev/', custom: false },
-        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/', custom: false }
+        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/', custom: false },
+        'tips' : { id: 'tips', name: 'Tips', icon: './public/images/Icon=Tips.jpg', url: './apps/tips.html', custom: false }
       };
       
       let allApps = {};
@@ -1178,7 +1179,7 @@
           layout = JSON.parse(storedLayout);
         } else {
           layout = [
-            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings']
+            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings', 'tips']
           ];
         }
         
