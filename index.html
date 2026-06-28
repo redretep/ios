@@ -33,6 +33,7 @@
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         user-select: none;
         -webkit-user-select: none;
+        -webkit-tap-highlight-color: transparent; /* Removes browser-default blue highlight box on mobile taps */
       }
       
       html, body {
@@ -175,6 +176,7 @@
         z-index: 10;
         display: flex;
         overflow: hidden;
+        touch-action: none; /* Prevents mobile browser horizontal scrolling default gestures during swiping */
       }
       
       .screen-scroller {
@@ -1229,8 +1231,8 @@
         
         <span class="modal-label">App Target Source</span>
         <div class="modal-select-row">
-          <button class="modal-tab-btn active" id="src-tab-url" onclick="switchSrcMode('url')">Embed URL</button>
-          <button class="modal-tab-btn" id="src-tab-upload" onclick="switchSrcMode('upload')">File/Folder</button>
+          <button class="modal-tab-btn active" id="src-tab-url" onclick="switchIconMode('url')">Embed URL</button>
+          <button class="modal-tab-btn" id="src-tab-upload" onclick="switchIconMode('upload')">File/Folder</button>
           <button class="modal-tab-btn" id="src-tab-html" onclick="switchSrcMode('html')">Paste HTML</button>
         </div>
         <input type="text" id="modal-app-src-url" class="modal-input" placeholder="https://wikipedia.org">
@@ -2519,18 +2521,18 @@
       let searchTimeout;
       window.searchAppStore = (query) => {
         clearTimeout(searchTimeout);
-        const resultsDiv = document.getElementById('app-store-results');
+        const fontResultsDiv = document.getElementById('app-store-results');
         if (!query.trim()) {
-          resultsDiv.style.display = 'none';
+          fontResultsDiv.style.display = 'none';
           return;
         }
         searchTimeout = setTimeout(() => {
           fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=software&limit=5`)
             .then(res => res.json())
             .then(data => {
-              resultsDiv.innerHTML = '';
+              fontResultsDiv.innerHTML = '';
               if (data.results && data.results.length > 0) {
-                resultsDiv.style.display = 'flex';
+                fontResultsDiv.style.display = 'flex';
                 data.results.forEach(item => {
                   const div = document.createElement('div');
                   div.className = 'app-search-result-item';
@@ -2543,16 +2545,16 @@
                     switchIconMode('url');
                     const highResIcon = item.artworkUrl100.replace('100x100bb', '512x512bb');
                     document.getElementById('modal-app-icon-url').value = highResIcon;
-                    resultsDiv.style.display = 'none';
+                    fontResultsDiv.style.display = 'none';
                     document.getElementById('modal-app-store-search').value = '';
                   };
-                  resultsDiv.appendChild(div);
+                  fontResultsDiv.appendChild(div);
                 });
               } else {
-                resultsDiv.style.display = 'none';
+                fontResultsDiv.style.display = 'none';
               }
             }).catch(() => {
-              resultsDiv.style.display = 'none';
+              fontResultsDiv.style.display = 'none';
             });
         }, 300);
       };

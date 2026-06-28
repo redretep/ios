@@ -2,6 +2,11 @@
 
 All notable changes to the iOS Homescreen project are documented here.
 
+## [1.3.1] - 2026-06-28
+### Fixed
+- **Mobile Page Swiping**: Added `touch-action: none` on the screen scroller container to prevent mobile browsers from intercepting drag gestures, enabling 100% fluid horizontal page changes.
+- **Mobile Tap Highlight**: Disabled the browser-default blue highlight overlay on tap clicks via CSS `-webkit-tap-highlight-color: transparent`.
+
 ## [1.3.0] - 2026-06-28
 ### Added
 - **Spotlight Search Overlay**: Pulling down on any grid page reveals a translucent, blurred Apple-style search box that filters apps in real-time.
