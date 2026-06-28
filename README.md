@@ -1,70 +1,29 @@
-# iOS Web Recreation (Look & Feel + Interaction)
+# iOS Homescreen Remake
 
-A client-side web recreation designed to replicate the visual language, physics, and interactions of the iOS Homescreen. This project pairs HTML5 and CSS structures with native JavaScript to simulate app library, page navigation, and responsive touch/click actions. External applications can be embedded directly within the UI frame using standard iframe sandboxing.
+A high-fidelity replica of the modern iOS Homescreen, built using vanilla HTML, CSS, and JavaScript.
 
-## 📱 Features
+## Features
 
-* **Device Wrapper & Environment:** Simulates a physical iPhone chassis (393px × 852px) featuring a custom Dynamic Island overlay.
-* **Apple Grid Engine:** A strict 4-column CSS layout matching native icon distribution.
-* **Glassmorphic Dock:** A persistent bottom action area utilizing CSS backdrop-filters (`blur()`) over alpha-translucent panels.
-* **JavaScript State Management:** Lightweight handlers managing core system events, layout tracking, and app opening/closing sequences.
-* **Web App Embeds:** Uses secure, sandboxed embedding wrappers to load live web applications natively inside app views without disrupting the master interface shell.
+- **iOS Springboard Grid**: Strict 4x6 layout grid with pixel-accurate safe area spacing, notch, status bar, page indicators, and bottom home indicator.
+- **Interactive Widgets Page (Page 0)**: Displays weather, battery, music, and stocks widgets.
+- **App Library (Last Page)**: Categorized folder quadrants, search filter with real-time A-Z scroll scrubber, and full-screen folder overlay views.
+- **Wiggle Mode (Home Screen Edit)**: Long press or right-click to enter edit mode, allowing you to drag-and-drop apps to rearrange pages, set custom wallpaper backgrounds, and delete custom apps.
+- **Custom Web Apps Modal**: Add new web apps using custom URLs, uploaded HTML files, or entire webapp folders (automatically compiled into standalone, self-contained documents).
+- **iTunes Search API Integration**: Autocomplete app titles and search the official App Store to fetch high-resolution (`512x512`) icons.
+- **Standalone Settings App**: A separate `settings.html` application styled after iOS Dark Mode, featuring:
+  - Guest Profile Card
+  - Airplane Mode & Connectivity Toggle
+  - Custom Wallpaper Manager (supporting presets, URLs, and image uploads)
+  - Full Backup Export & Import (JSON configuration format)
+- **Dynamic Dock Alignment**: Dock apps are dynamically centered vertically and horizontally with uniform gap spacing. Supports dragging apps in and out of the dock.
 
-## 🛠️ Design & Architecture System
+## Architecture
 
-| Element | Specification | Technical Approach |
-| :--- | :--- | :--- |
-| **Typography** | SF Pro / System Fallbacks | `font-family: -apple-system, ...` |
-| **Icon Curve** | Continuous Corner Radius | `border-radius: 14px;` (approximated squircle) |
-| **Grid Spacing** | 4-Column Layout | `grid-template-columns: repeat(4, 1fr);` |
-| **Dock Blur** | Native Backdrop Translucency | `backdrop-filter: blur(30px);` |
-| **App Handling** | Embedded Web Apps | Sandboxed `<iframe>` tags with isolated context |
-| **Transitions** | Native App Opening Scaling | CSS custom transforms driven by JS state triggers |
+- **`index.html`**: The main entry point rendering the physical phone viewport, home indicator bar, page-swiping transitions, and dynamically populated pages.
+- **`settings.html`**: A standalone settings utility embedded via `iframe` inside the main launcher. Uses `postMessage` calls to coordinate system settings.
+- **Data Persistence**: Uses `localStorage` to save all custom apps, layouts, dock state, custom wallpaper URLs/images, and system preferences.
 
-## 🚀 Getting Started
+## Getting Started
 
-Because this project relies entirely on browser-native runtime engines (HTML5, CSS3, and Vanilla JavaScript), running it locally is straightforward and requires no build steps or bundlers.
-
-### Prerequisites
-
-* Any modern web browser supporting standard ES6 Javascript and CSS backdrop filters (Safari, Chrome, Firefox, or Edge).
-* A local text editor if you plan to append custom embeds.
-
-### Installation & Deployment
-
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/redretep/ios.git](https://github.com/redretep/ios.git)
-   cd ios
-
-```
-
-2. **Launch the interface:**
-Double-click the `index.html` file to view it directly via the `file://` protocol, or boot up a lightweight local static file server to handle embedded frame contexts reliably:
-```bash
-# Quick launch via Python's built-in module
-python3 -m http.server 8000
-
-```
-
-
-Once running, open your web browser and navigate to `http://localhost:8000`.
-
-## ⚙️ How Embeds & Logic Work
-
-### 1. App Launch Mechanics (JavaScript)
-
-The DOM structure uses `data-app` targets or event listeners assigned to individual `.app-item` containers. When clicked, JavaScript toggles active viewport states, scaling down the home screen grid while animating the target application view into full scale from the source icon coordinates.
-
-### 2. Sandbox Embedding Configuration
-
-External web tools, retro games, or standalone web apps are mapped via `<iframe>` nodes. They are configured with targeted sandbox rules to optimize security while rendering within the system mock framework:
-
-```html
-<iframe src="[https://example-app.com](https://example-app.com)" sandbox="allow-scripts allow-same-origin"></iframe>
-
-```
-
-## 📄 License
-
-This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
+1. Open `index.html` directly in any modern browser or check it out live at [redretep.github.io/ios](https://redretep.github.io/ios)
+2. Long-press on the homescreen background (or right-click) to trigger the context menu and edit/customization modes.

@@ -247,6 +247,7 @@
         flex-direction: column;
         align-items: center;
         cursor: pointer;
+        touch-action: none; /* Prevents touch dragging browser scroll conflicts on mobile Chrome */
       }
       
       .app-icon {
@@ -982,7 +983,7 @@
           <div class="edit-control-bar" id="edit-bar">
             <button class="plus-btn" onclick="openAddAppModal()">+</button>
             <div style="display:flex;gap:6px;">
-              <button class="edit-btn" onclick="promptWallpaperURL()">Set Wallpaper</button>
+              <button class="edit-btn" onclick="promptWallpaperURL()">Set BG</button>
               <button class="edit-btn" onclick="exitWiggleMode()" style="background:#0a84ff;">Done</button>
             </div>
           </div>
@@ -1031,7 +1032,7 @@
                       <div style="font-size: 24px;">♫</div>
                       <div>
                         <h4 style="font-size: 12px; font-weight: 600; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Now Playing</h4>
-                        <p style="font-size: 10px; color: #aaa; margin:2px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Spotify</p>
+                        <p style="font-size: 10px; color: #aaa; margin:2px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Antigravity Radio</p>
                       </div>
                     </div>
                   </div>
@@ -1141,15 +1142,14 @@
       
       const PREINSTALLED_APPS = {
         'settings': { id: 'settings', name: 'Settings', icon: './public/images/Icon=Settings.png', url: 'settings.html', htmlContent: '', custom: false },
-        'calculator': { id: 'calculator', name: 'Calculator', icon: './public/images/Icon=Calculator.png', url: './apps/calculator.html', custom: false },
-        'camera': { id: 'camera', name: 'Camera', icon: './public/images/Icon=Camera.png', url: './apps/camera.html', custom: false },
-        'clock': { id: 'clock', name: 'Clock', icon: './public/images/Icon=Clock.png', url: './apps/clock.html', custom: false },
-        'photos': { id: 'photos', name: 'Photos', icon: './public/images/Icon=Photos.png', url: './apps/photos.html', custom: false },
-        'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: './apps/app-store.html', custom: false },
+        'calculator': { id: 'calculator', name: 'Calculator', icon: './public/images/Icon=Calculator.png', url: 'https://www.desmos.com/scientific', custom: false },
+        'camera': { id: 'camera', name: 'Camera', icon: './public/images/Icon=Camera.png', url: 'https://webrtc.github.io/samples/src/content/getusermedia/canvas/', custom: false },
+        'clock': { id: 'clock', name: 'Clock', icon: './public/images/Icon=Clock.png', url: 'https://embed.time.is/', custom: false },
+        'photos': { id: 'photos', name: 'Photos', icon: './public/images/Icon=Photos.png', url: 'https://unsplash.com', custom: false },
+        'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: 'https://www.apple.com/app-store/', custom: false },
         'safari': { id: 'safari', name: 'Safari', icon: './public/images/Icon=Safari.png', url: 'https://www.google.com/search?igu=1', custom: false },
-        'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://chat.pidi.workers.dev/', custom: false },
-        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/', custom: false },
-        'tips' : { id: 'tips', name: 'Tips', icon: './public/images/Icon=Tips.jpg', url: './apps/tips.html', custom: false }
+        'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://www.apple.com/ios/messages/', custom: false },
+        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva', custom: false }
       };
       
       let allApps = {};
@@ -1179,7 +1179,7 @@
           layout = JSON.parse(storedLayout);
         } else {
           layout = [
-            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings', 'tips']
+            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings']
           ];
         }
         
@@ -1446,7 +1446,11 @@
           card.oncontextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            openGlobalContextMenu(e.clientX, e.clientY);
+            if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+              enterWiggleMode();
+            } else {
+              openGlobalContextMenu(e.clientX, e.clientY);
+            }
           };
           
           // Render Node quadrant slots (12 pt padding, 19 pt spacing, 60x60 icons)
@@ -1911,7 +1915,11 @@
           e.preventDefault();
           e.stopPropagation();
           clearLongPress();
-          openAppContextMenu(e.clientX, e.clientY, appId, pageIdx, appIdx);
+          if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+            enterWiggleMode();
+          } else {
+            openAppContextMenu(e.clientX, e.clientY, appId, pageIdx, appIdx);
+          }
         });
         
         // Click action: launch app
@@ -1964,11 +1972,36 @@
         renderAll();
       };
       
-      // Global empty screen context menu
-      document.querySelector('.screen-container').oncontextmenu = (e) => {
+      // Global empty screen context menu & Long-press trigger on mobile
+      const screenContainer = document.querySelector('.screen-container');
+      
+      let screenLongPressTimeout = null;
+      screenContainer.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box, .custom-context-menu, button, input')) return;
+        clearTimeout(screenLongPressTimeout);
+        screenLongPressTimeout = setTimeout(() => {
+          if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+            enterWiggleMode();
+          }
+        }, 800);
+      });
+      
+      const clearScreenLongPress = () => {
+        clearTimeout(screenLongPressTimeout);
+      };
+      screenContainer.addEventListener('pointerup', clearScreenLongPress);
+      screenContainer.addEventListener('pointerleave', clearScreenLongPress);
+      screenContainer.addEventListener('pointercancel', clearScreenLongPress);
+      
+      screenContainer.oncontextmenu = (e) => {
         if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box')) return;
         e.preventDefault();
-        openGlobalContextMenu(e.clientX, e.clientY);
+        
+        if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+          enterWiggleMode();
+        } else {
+          openGlobalContextMenu(e.clientX, e.clientY);
+        }
       };
       
       const openGlobalContextMenu = (clientX, clientY) => {
@@ -2005,6 +2038,20 @@
         menu.style.display = 'flex';
         menu.style.left = `${clientX - screenRect.left}px`;
         menu.style.top = `${clientY - screenRect.top}px`;
+      };
+      
+      const deleteApp = (pageIdx, appIdx, appId) => {
+        if (appId === 'settings') return; // Cannot delete settings app
+        if (confirm(`Delete app "${allApps[appId].name}"?`)) {
+          if (pageIdx === -1) {
+            dock.splice(appIdx, 1);
+          } else {
+            layout[pageIdx].splice(appIdx, 1);
+          }
+          delete allApps[appId];
+          saveState();
+          renderAll();
+        }
       };
       
       const closeContextMenus = () => {
@@ -2451,20 +2498,6 @@
         saveState();
         closeAddAppModal();
         renderAll();
-      };
-      
-      const deleteApp = (pageIdx, appIdx, appId) => {
-        if (appId === 'settings') return; // Cannot delete settings app
-        if (confirm(`Delete app "${allApps[appId].name}"?`)) {
-          if (pageIdx === -1) {
-            dock.splice(appIdx, 1);
-          } else {
-            layout[pageIdx].splice(appIdx, 1);
-          }
-          delete allApps[appId];
-          saveState();
-          renderAll();
-        }
       };
       
       // 7. INITIALIZATION ON LOAD
