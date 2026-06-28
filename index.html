@@ -230,6 +230,23 @@
         box-shadow: 0 8px 20px rgba(0,0,0,0.3);
       }
       
+      .widget-edit-btn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
+        font-size: 16px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: 100;
+      }
+      .widget-card:hover .widget-edit-btn {
+        opacity: 0.6;
+      }
+      .widget-edit-btn:hover {
+        opacity: 1 !important;
+      }
+      
       /* --- PAGE 1: APP GRID (4x6 Matrix coordinates) --- */
       .main-grid-container {
         position: absolute;
@@ -715,15 +732,33 @@
         -webkit-backdrop-filter: blur(20px);
         border-radius: 14px;
         padding: 8px 12px;
-        display: none;
+        display: flex;
         align-items: center;
         justify-content: space-between;
         z-index: 1500;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transform: translateY(-130px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.25s ease-out, opacity 0.25s ease-out;
       }
       .edit-control-bar.active {
-        display: flex;
+        pointer-events: auto;
+        animation: slideDownBar 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
       }
+      .edit-control-bar.active .plus-btn,
+      .edit-control-bar.active .edit-btn {
+        animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+      }
+      @keyframes slideDownBar {
+        0% { transform: translateY(-130px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+      @keyframes scaleIn {
+        0% { transform: scale(0.6); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      
       .edit-btn {
         background: rgba(255,255,255,0.15);
         color: white;
@@ -794,18 +829,23 @@
       .modal-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(0,0,0,0.7);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(0,0,0,0);
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
         z-index: 10000;
-        display: none;
+        pointer-events: none;
+        display: flex;
         align-items: center;
         justify-content: center;
         padding: 24px;
         overflow-y: auto; /* Enable scroll inside the modal wrapper */
+        transition: background 0.3s ease, backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease;
       }
       .modal-overlay.open {
-        display: flex;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        pointer-events: auto;
       }
       .modal-box {
         width: 100%;
@@ -820,6 +860,13 @@
         gap: 14px;
         margin-top: auto;
         margin-bottom: auto;
+        transform: scale(0.9) translateY(120px);
+        opacity: 0;
+        transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.38s ease;
+      }
+      .modal-overlay.open .modal-box {
+        transform: scale(1) translateY(0);
+        opacity: 1;
       }
       .modal-box h2 {
         font-size: 18px;
@@ -922,6 +969,84 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      
+      /* --- SPOTLIGHT SEARCH OVERLAY --- */
+      .spotlight-overlay {
+        position: absolute;
+        inset: 47px 0 0 0;
+        background: rgba(15, 15, 15, 0.15);
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+        z-index: 1800;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 20px;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-50px);
+        transition: opacity 0.3s cubic-bezier(0.25, 0.86, 0.36, 1), transform 0.3s cubic-bezier(0.25, 0.86, 0.36, 1), backdrop-filter 0.3s ease, -webkit-backdrop-filter 0.3s ease;
+      }
+      .spotlight-overlay.open {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+        backdrop-filter: blur(35px);
+        -webkit-backdrop-filter: blur(35px);
+      }
+      .spotlight-search-bar {
+        background: rgba(255,255,255,0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        height: 38px;
+        color: #aaa;
+        margin-bottom: 20px;
+      }
+      .spotlight-search-bar input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 16px;
+        width: 100%;
+        margin-left: 8px;
+      }
+      .spotlight-search-bar input::placeholder {
+        color: rgba(255,255,255,0.5);
+      }
+      .spotlight-results {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .spotlight-result-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 8px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .spotlight-result-item:hover {
+        background: rgba(255,255,255,0.1);
+      }
+      .spotlight-result-item .app-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+        background-color: #333;
+      }
+      .spotlight-result-item span {
+        color: white;
+        font-size: 15px;
+        font-weight: 500;
+      }
     </style>
   </head>
   <body>
@@ -935,7 +1060,7 @@
       
       <!-- Battery Apple Icon -->
       <symbol id="icon-battery-75" viewBox="0 0 28 28">
-        <path d="M7.65269 18H18.0852C19.2961 18 20.2475 17.8713 20.9328 17.2087C21.6114 16.5461 21.7379 15.639 21.7379 14.4682V12.5318C21.7379 11.3545 21.6114 10.4475 20.9328 9.79128C20.2409 9.12866 19.2961 9 18.0852 9H7.63273C6.44178 9 5.49035 9.12866 4.81171 9.79128C4.12641 10.4539 4 11.361 4 12.5125V14.4682C4 15.639 4.12641 16.5525 4.80506 17.2087C5.49701 17.8713 6.44178 18 7.65269 18ZM7.4664 16.7391C6.7811 16.7391 6.13573 16.6426 5.76314 16.2888C5.39055 15.9285 5.30406 15.3174 5.30406 14.6483V12.3645C5.30406 11.6891 5.39055 11.0715 5.75649 10.7112C6.12908 10.351 6.7811 10.2609 7.47971 10.2609H18.2715C18.9634 10.2609 19.6088 10.351 19.9747 10.7112C20.3473 11.0715 20.4338 11.6826 20.4338 12.3517V14.6483C20.4338 15.3174 20.3473 15.9285 19.9747 16.2888C19.6088 16.649 18.9634 16.7391 18.2715 16.7391H7.4664ZM7.20692 15.9285H15.171C15.5835 15.9285 15.8297 15.8706 16.0027 15.7034C16.169 15.5361 16.2355 15.2981 16.2355 14.9056V12.0944C16.2355 11.6955 16.169 11.4575 16.0027 11.2966C15.8297 11.1294 15.5835 11.0715 15.171 11.0715H7.22023C6.79441 11.0715 6.54824 11.1294 6.37525 11.2902C6.20892 11.4575 6.14238 11.7019 6.14238 12.1072V14.9056C6.14238 15.3045 6.20892 15.5361 6.37525 15.7034C6.54824 15.8706 6.79441 15.9285 7.20692 15.9285ZM22.7092 15.2402C23.2615 15.208 24 14.5261 24 13.4968C24 12.4739 23.2615 11.7856 22.7092 11.7534V15.2402Z"/>
+        <path d="M7.65269 18H18.0852C19.2961 18 20.2475 17.8713 20.9328 17.2087C21.6114 16.5461 21.7379 15.639 21.7379 14.4682V12.5318C21.7379 11.3545 21.6114 10.4475 20.9328 9.79128C20.2409 9.12866 19.2961 9 18.0852 9H7.63273C6.44178 9 5.49035 9.12866 4.81171 9.79128C4.12641 10.4539 4 11.361 4 12.5125V14.4682C4 15.639 4.12641 16.5525 4.80506 17.2087C5.49701 17.8713 6.44178 18 7.65269 18ZM7.4664 16.7391C6.7811 16.7391 6.13573 16.6426 5.76314 16.2888C5.39055 15.9285 5.30406 15.3174 5.30406 14.6483V12.3645C5.30406 11.6891 5.39055 11.0715 5.75649 10.7112C6.12908 10.351 6.7811 10.2609 7.47971 10.2609H18.2715C18.9634 10.2609 19.6088 10.351 19.9747 10.7112C20.3473 11.0715 20.4338 11.6826 20.4338 12.3517V14.4682C20.4338 15.3174 20.3473 15.9285 19.9747 16.2888C19.6088 16.649 18.9634 16.7391 18.2715 16.7391H7.4664ZM7.20692 15.9285H15.171C15.5835 15.9285 15.8297 15.8706 16.0027 15.7034C16.169 15.5361 16.2355 15.2981 16.2355 14.9056V12.0944C16.2355 11.6955 16.169 11.4575 16.0027 11.2966C15.8297 11.1294 15.5835 11.0715 15.171 11.0715H7.22023C6.79441 11.0715 6.54824 11.1294 6.37525 11.2902C6.20892 11.4575 6.14238 11.7019 6.14238 12.1072V14.9056C6.14238 15.3045 6.20892 15.5361 6.37525 15.7034C6.54824 15.8706 6.79441 15.9285 7.20692 15.9285ZM22.7092 15.2402C23.2615 15.208 24 14.5261 24 13.4968C24 12.4739 23.2615 11.7856 22.7092 11.7534V15.2402Z"/>
       </symbol>
       
       <!-- Airplane Apple Icon -->
@@ -996,55 +1121,33 @@
               <div class="screen-page widgets-page">
                 <div class="widgets-list">
                   <!-- Medium Widget: Weather -->
-                  <div class="widget-card widget-medium weather-widget" style="padding: 16px; background: linear-gradient(135deg, #1d976c, #93f9b9); color: white; display: flex; flex-direction: column; justify-content: space-between;">
+                  <div class="widget-card widget-medium weather-widget" style="padding: 16px; background: linear-gradient(135deg, #1b2a47, #1e3c72); color: white; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+                    <span class="widget-edit-btn" style="position: absolute; right: 12px; top: 12px; font-size: 16px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s;" onclick="editWeatherCity(event)">⚙</span>
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                       <div>
-                        <h3 style="font-size: 18px; font-weight: 600;">London</h3>
-                        <span style="font-size: 36px; font-weight: 200;">22°</span>
+                        <h3 id="weather-city" style="font-size: 18px; font-weight: 600;">London</h3>
+                        <span id="weather-temp" style="font-size: 36px; font-weight: 200;">22°</span>
                       </div>
-                      <span style="font-size: 28px;">Sunny</span>
+                      <span id="weather-desc" style="font-size: 28px;">Sunny</span>
                     </div>
-                    <span style="font-size: 11px; opacity: 0.8;">H:24° L:14° - UV Index 5</span>
+                    <span id="weather-range" style="font-size: 11px; opacity: 0.8;">H:24° L:14° - UV Index 5</span>
                   </div>
                   
-                  <!-- Small Widgets Row -->
-                  <div style="display:flex; justify-content:space-between; width: 100%;">
-                    <!-- Small Widget: Battery -->
-                    <div class="widget-card widget-small battery-widget" style="padding: 16px; background: rgba(255,255,255,0.08); color: white; display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 12px;">
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:10px; height:20px; border:2px solid #30d158; border-radius:3px; position:relative; background:#30d158;"></div>
-                        <div>
-                          <div style="font-size:10px; opacity:0.7;">iPhone</div>
-                          <div style="font-size:12px; font-weight:bold;">84%</div>
-                        </div>
-                      </div>
-                      <div style="display:flex; align-items:center; gap:8px;">
-                        <div style="width:10px; height:20px; border:2px solid #30d158; border-radius:3px; position:relative; background:#30d158;"></div>
-                        <div>
-                          <div style="font-size:10px; opacity:0.7;">Watch</div>
-                          <div style="font-size:12px; font-weight:bold;">95%</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <!-- Small Widget: Music -->
-                    <div class="widget-card widget-small music-widget" style="padding: 16px; background: #232323; color: white; display: flex; flex-direction: column; justify-content: space-between;">
-                      <div style="font-size: 24px;">♫</div>
-                      <div>
-                        <h4 style="font-size: 12px; font-weight: 600; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Now Playing</h4>
-                        <p style="font-size: 10px; color: #aaa; margin:2px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Antigravity Radio</p>
-                      </div>
-                    </div>
+                  <!-- Medium Widget: Spotify Playlist Embed (Wider, replacing Battery + small Music widgets) -->
+                  <div class="widget-card widget-medium spotify-widget" style="background: #191414; color: white; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; height: 152px;">
+                    <span class="widget-edit-btn" style="position: absolute; right: 12px; top: 12px; font-size: 16px; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; z-index: 10;" onclick="editSpotifyWidget(event)">⚙</span>
+                    <iframe id="spotify-widget-iframe" src="https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius: 28px; border: none; background: #191414;"></iframe>
                   </div>
                   
-                  <!-- Medium Widget: Stocks or Secondary Info -->
-                  <div class="widget-card widget-medium" style="padding: 16px; background: #1c1c1e; color: white; display: flex; flex-direction: column; justify-content: space-between;">
-                    <div style="display:flex; justify-content:space-between;">
-                      <span style="font-weight:bold; font-size:14px;">AAPL</span>
-                      <span style="color:#30d158; font-weight:bold;">+2.45%</span>
+                  <!-- Medium Widget: News RSS Feed -->
+                  <div class="widget-card widget-medium news-widget" style="padding: 16px; background: #1c1c1e; color: white; display: flex; flex-direction: column; justify-content: space-between; overflow:hidden;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:6px;">
+                      <span style="font-weight:bold; font-size:12px; color:#ff453a; letter-spacing:1px;">TODAY'S NEWS</span>
+                      <span style="font-size:10px; color:#888;">Google News</span>
                     </div>
-                    <div style="font-size: 32px; font-weight: 200;">$184.20</div>
-                    <span style="font-size: 10px; color: #888;">Market Open</span>
+                    <div id="news-headline-container" style="flex:1; display:flex; flex-direction:column; justify-content:center; margin-top:8px;">
+                      <h4 id="news-headline" style="font-size: 12px; font-weight: 500; line-height: 1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; transition: opacity 0.3s ease;">Loading top news...</h4>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1056,12 +1159,21 @@
           
           <!-- Dock Container -->
           <div class="dock-container" id="homescreen-dock">
-            <!-- Populated dynamically by JS (holds 4 apps by default) -->
+            <!-- Populated dynamically by JS -->
           </div>
           
           <!-- Page Dots -->
           <div class="page-indicators" id="page-indicators">
             <!-- Populated dynamically by JS -->
+          </div>
+          
+          <!-- SPOTLIGHT OVERLAY PANEL -->
+          <div class="spotlight-overlay" id="spotlight-overlay">
+            <div class="spotlight-search-bar">
+              <svg class="svg-icon" style="fill:rgba(255,255,255,0.4);"><use href="#icon-search"></use></svg>
+              <input type="search" id="spotlight-input" placeholder="Search Apps" oninput="filterSpotlight(this.value)">
+            </div>
+            <div class="spotlight-results" id="spotlight-results-grid"></div>
           </div>
           
           <!-- APP IFRAME POPOVER WINDOWS ARE GENERATED DYNAMICALLY BY JAVASCRIPT -->
@@ -1142,14 +1254,15 @@
       
       const PREINSTALLED_APPS = {
         'settings': { id: 'settings', name: 'Settings', icon: './public/images/Icon=Settings.png', url: 'settings.html', htmlContent: '', custom: false },
-        'calculator': { id: 'calculator', name: 'Calculator', icon: './public/images/Icon=Calculator.png', url: 'https://www.desmos.com/scientific', custom: false },
-        'camera': { id: 'camera', name: 'Camera', icon: './public/images/Icon=Camera.png', url: 'https://webrtc.github.io/samples/src/content/getusermedia/canvas/', custom: false },
-        'clock': { id: 'clock', name: 'Clock', icon: './public/images/Icon=Clock.png', url: 'https://embed.time.is/', custom: false },
-        'photos': { id: 'photos', name: 'Photos', icon: './public/images/Icon=Photos.png', url: 'https://unsplash.com', custom: false },
-        'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: 'https://www.apple.com/app-store/', custom: false },
+        'calculator': { id: 'calculator', name: 'Calculator', icon: './public/images/Icon=Calculator.png', url: './apps/calculator.html', custom: false },
+        'camera': { id: 'camera', name: 'Camera', icon: './public/images/Icon=Camera.png', url: './apps/camera.html', custom: false },
+        'clock': { id: 'clock', name: 'Clock', icon: './public/images/Icon=Clock.png', url: './apps/clock.html', custom: false },
+        'photos': { id: 'photos', name: 'Photos', icon: './public/images/Icon=Photos.png', url: './apps/photos.html', custom: false },
+        'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: './apps/app-store.html', custom: false },
         'safari': { id: 'safari', name: 'Safari', icon: './public/images/Icon=Safari.png', url: 'https://www.google.com/search?igu=1', custom: false },
-        'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://www.apple.com/ios/messages/', custom: false },
-        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva', custom: false }
+        'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://chat.pidi.workers.dev/', custom: false },
+        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/', custom: false },
+        'tips' : { id: 'tips', name: 'Tips', icon: './public/images/Icon=Tips.jpg', url: './apps/tips.html', custom: false }
       };
       
       let allApps = {};
@@ -1179,7 +1292,7 @@
           layout = JSON.parse(storedLayout);
         } else {
           layout = [
-            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings']
+            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings', 'tips']
           ];
         }
         
@@ -1650,6 +1763,28 @@
               window.addEventListener('pointerup', upHandler);
             });
           }
+          
+          // Swipe down on scroll view to focus search in App Library
+          const scrollEl = document.getElementById('lib-grid-scroll');
+          let scrollStartY = 0;
+          if (scrollEl) {
+            scrollEl.addEventListener('pointerdown', (e) => {
+              if (scrollEl.scrollTop === 0) {
+                scrollStartY = e.clientY;
+              } else {
+                scrollStartY = -1;
+              }
+            });
+            scrollEl.addEventListener('pointermove', (e) => {
+              if (scrollStartY !== -1 && scrollEl.scrollTop === 0) {
+                const dy = e.clientY - scrollStartY;
+                if (dy > 40) {
+                  scrollStartY = -1;
+                  document.getElementById('lib-search-input').focus();
+                }
+              }
+            });
+          }
         }, 50);
       };
       
@@ -1823,14 +1958,6 @@
             if (!isDraggingIcon) return;
             isDraggingIcon = false;
             
-            if (dragPreview) {
-              dragPreview.remove();
-              dragPreview = null;
-            }
-            
-            el.style.opacity = '1';
-            document.querySelectorAll('.app-icon-wrapper').forEach(w => w.classList.remove('drag-over'));
-            
             const releaseEl = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
             const targetEl = releaseEl?.closest('.app-icon-wrapper');
             
@@ -1845,9 +1972,16 @@
             );
             
             if (targetEl && targetEl !== el) {
+              // Valid swap drop target
               const targetPageIdx = targetEl.dataset.dock ? -1 : parseInt(targetEl.dataset.page);
               const targetAppIdx = parseInt(targetEl.dataset.idx);
               swapApps(dragSource, { pageIdx: targetPageIdx, appIdx: targetAppIdx });
+              
+              if (dragPreview) {
+                dragPreview.remove();
+                dragPreview = null;
+              }
+              el.style.opacity = '1';
             } else if (droppedInDock) {
               // Dropped on empty area in dock -> Append or Swap closest
               if (dragSource.pageIdx !== -1) {
@@ -1877,6 +2011,12 @@
                 saveState();
                 renderAll();
               }
+              
+              if (dragPreview) {
+                dragPreview.remove();
+                dragPreview = null;
+              }
+              el.style.opacity = '1';
             } else {
               const pageContainer = releaseEl?.closest('.screen-page');
               if (pageContainer) {
@@ -1897,8 +2037,27 @@
                   renderAll();
                 }
               }
+              
+              // Organic Snap-Back Animation on invalid empty screen drop
+              if (dragPreview) {
+                const rect = el.getBoundingClientRect();
+                dragPreview.style.transition = 'left 0.3s cubic-bezier(0.22, 1, 0.36, 1), top 0.3s cubic-bezier(0.22, 1, 0.36, 1), transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease';
+                dragPreview.style.left = `${rect.left}px`;
+                dragPreview.style.top = `${rect.top}px`;
+                dragPreview.style.transform = 'scale(1)';
+                
+                const tempPreview = dragPreview;
+                dragPreview = null;
+                setTimeout(() => {
+                  el.style.opacity = '1';
+                  tempPreview.remove();
+                }, 300);
+              } else {
+                el.style.opacity = '1';
+              }
             }
             
+            document.querySelectorAll('.app-icon-wrapper').forEach(w => w.classList.remove('drag-over'));
             dragSource = null;
           };
           
@@ -1977,7 +2136,7 @@
       
       let screenLongPressTimeout = null;
       screenContainer.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box, .custom-context-menu, button, input')) return;
+        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box, .custom-context-menu, .spotlight-overlay, button, input')) return;
         clearTimeout(screenLongPressTimeout);
         screenLongPressTimeout = setTimeout(() => {
           if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
@@ -1994,7 +2153,7 @@
       screenContainer.addEventListener('pointercancel', clearScreenLongPress);
       
       screenContainer.oncontextmenu = (e) => {
-        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box')) return;
+        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box, .spotlight-overlay')) return;
         e.preventDefault();
         
         if (e.pointerType === 'touch' || ('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
@@ -2069,12 +2228,21 @@
       let startSwipeTime = 0;
       let targetI = 1;
       
+      let spotlightStartY = 0;
+      let isCheckingSpotlight = false;
+      
       const scrollerContainer = document.querySelector('.screen-scroller-container');
       const scroller = document.getElementById('scroller');
       
       scrollerContainer.addEventListener('pointerdown', (e) => {
         if (isDraggingIcon) return; // Allow page swipes during wiggle mode unless dragging
-        if (e.target.closest('button, input, a, .app-icon, .delete-badge, .modal-box, .custom-context-menu')) return;
+        if (e.target.closest('button, input, a, .app-icon, .delete-badge, .modal-box, .custom-context-menu, .spotlight-overlay')) return;
+        
+        // Check spotlight swiping start conditions
+        if (!isWiggleMode && currentI > 0 && currentI < layout.length + 1) {
+          spotlightStartY = e.clientY;
+          isCheckingSpotlight = true;
+        }
         
         isSwiping = true;
         startSwipeX = e.clientX;
@@ -2085,6 +2253,16 @@
       });
       
       window.addEventListener('pointermove', (e) => {
+        if (isCheckingSpotlight) {
+          const dy = e.clientY - spotlightStartY;
+          if (dy > 40 && Math.abs(e.clientX - startSwipeX) < 20) {
+            isCheckingSpotlight = false;
+            isSwiping = false;
+            openSpotlight();
+            return;
+          }
+        }
+        
         if (!isSwiping) return;
         const dx = e.clientX - startSwipeX;
         const pageWidth = scrollerContainer.getBoundingClientRect().width;
@@ -2099,6 +2277,7 @@
       });
       
       window.addEventListener('pointerup', (e) => {
+        isCheckingSpotlight = false;
         if (!isSwiping) return;
         isSwiping = false;
         
@@ -2153,6 +2332,70 @@
           // Between 1 and maxI - 1 (all homescreen pages), blur is 0px
           blurOverlay.style.backdropFilter = `blur(${blurAmount}px)`;
           blurOverlay.style.webkitBackdropFilter = `blur(${blurAmount}px)`;
+        }
+      };
+      
+      // Spotlight Overlay Action Handlers
+      window.openSpotlight = () => {
+        const overlay = document.getElementById('spotlight-overlay');
+        overlay.style.display = 'flex';
+        overlay.offsetHeight;
+        overlay.classList.add('open');
+        const input = document.getElementById('spotlight-input');
+        input.value = '';
+        input.focus();
+        filterSpotlight('');
+      };
+      
+      window.closeSpotlight = () => {
+        const overlay = document.getElementById('spotlight-overlay');
+        overlay.classList.remove('open');
+        setTimeout(() => {
+          if (!overlay.classList.contains('open')) {
+            overlay.style.display = 'none';
+          }
+        }, 300);
+      };
+      
+      window.filterSpotlight = (query) => {
+        const grid = document.getElementById('spotlight-results-grid');
+        grid.innerHTML = '';
+        const matches = Object.values(allApps).filter(a => a.name.toLowerCase().includes(query.toLowerCase()));
+        
+        matches.forEach(app => {
+          const item = document.createElement('div');
+          item.className = 'spotlight-result-item';
+          item.onclick = () => {
+            closeSpotlight();
+            launchApp(app.id);
+          };
+          
+          const icon = document.createElement('div');
+          icon.className = 'app-icon';
+          if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+            icon.style.backgroundImage = `url('${app.icon}')`;
+          } else {
+            icon.style.background = '#2c2c2e';
+            icon.style.display = 'flex';
+            icon.style.alignItems = 'center';
+            icon.style.justifyContent = 'center';
+            icon.style.fontSize = '18px';
+            icon.innerText = app.icon || '🌐';
+          }
+          item.appendChild(icon);
+          
+          const label = document.createElement('span');
+          label.innerText = app.name;
+          item.appendChild(label);
+          
+          grid.appendChild(item);
+        });
+      };
+      
+      // Close spotlight if clicking empty spot
+      document.getElementById('spotlight-overlay').onclick = (e) => {
+        if (e.target === document.getElementById('spotlight-overlay') || e.target === document.getElementById('spotlight-results-grid')) {
+          closeSpotlight();
         }
       };
       
@@ -2500,7 +2743,139 @@
         renderAll();
       };
       
-      // 7. INITIALIZATION ON LOAD
+      // 7. WIDGET CUSTOMIZATIONS
+      
+      // Weather widget location
+      window.editWeatherCity = (e) => {
+        if (e) e.stopPropagation();
+        const city = prompt("Enter Weather City Location:", localStorage.getItem('weather-city') || 'London');
+        if (city) {
+          localStorage.setItem('weather-city', city);
+          fetchWeather(city);
+        }
+      };
+      
+      const fetchWeather = (city) => {
+        const cityEl = document.getElementById('weather-city');
+        if (cityEl) cityEl.innerText = city;
+        
+        fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`)
+          .then(res => res.json())
+          .then(data => {
+            const temp = data.current_condition[0].temp_C;
+            const desc = data.current_condition[0].weatherDesc[0].value;
+            const maxTemp = data.weather[0].maxtempC;
+            const minTemp = data.weather[0].mintempC;
+            
+            document.getElementById('weather-temp').innerText = `${temp}°`;
+            document.getElementById('weather-desc').innerText = desc;
+            document.getElementById('weather-range').innerText = `H:${maxTemp}° L:${minTemp}° - wttr.in`;
+          })
+          .catch(() => {
+            document.getElementById('weather-temp').innerText = '22°';
+            document.getElementById('weather-desc').innerText = 'Sunny';
+            document.getElementById('weather-range').innerText = 'H:24° L:14° - offline';
+          });
+      };
+      
+      // News widget Google RSS feed rotation using user's custom proxy server
+      let newsItems = [];
+      let newsIdx = 0;
+      let newsInterval = null;
+      
+      const fetchNews = () => {
+        const targetUrl = "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en";
+        fetch("https://api.pidi.workers.dev/?url=" + encodeURIComponent(targetUrl))
+          .then(res => {
+            if (!res.ok) throw new Error("Proxy error");
+            return res.text();
+          })
+          .then(text => {
+            let xmlText = text;
+            try {
+              const parsed = JSON.parse(text);
+              if (parsed.contents) xmlText = parsed.contents;
+              else if (parsed.contents === "") xmlText = "";
+            } catch (e) {
+              // Raw text, proceed
+            }
+            
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(xmlText, "text/xml");
+            const items = xml.querySelectorAll("item");
+            if (items && items.length > 0) {
+              newsItems = Array.from(items).map(item => {
+                const titleNode = item.querySelector("title");
+                return titleNode ? titleNode.textContent : "";
+              }).filter(t => t.length > 0);
+              
+              rotateNews();
+              clearInterval(newsInterval);
+              newsInterval = setInterval(rotateNews, 6000);
+            } else {
+              throw new Error("No news items parsed");
+            }
+          })
+          .catch(() => {
+            // Fallback
+            newsItems = [
+              "Apple Intelligence rolling out to global users next month",
+              "New space telescope captures high-resolution images of cosmic nebulae",
+              "Global markets show growth trend amid technology expansion"
+            ];
+            rotateNews();
+            clearInterval(newsInterval);
+            newsInterval = setInterval(rotateNews, 6000);
+          });
+      };
+      
+      const rotateNews = () => {
+        if (newsItems.length === 0) return;
+        const headlineEl = document.getElementById('news-headline');
+        if (headlineEl) {
+          headlineEl.style.opacity = '0';
+          setTimeout(() => {
+            headlineEl.innerText = newsItems[newsIdx];
+            headlineEl.style.opacity = '1';
+            newsIdx = (newsIdx + 1) % newsItems.length;
+          }, 300);
+        }
+      };
+      
+      // Spotify widget customizing link logic
+      window.editSpotifyWidget = (e) => {
+        if (e) e.stopPropagation();
+        const currentSrc = localStorage.getItem('spotify-widget-src') || 'https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva?utm_source=generator&theme=0';
+        const input = prompt("Enter Spotify Playlist/Album/Track Link or Embed URL:", currentSrc);
+        if (input) {
+          let embedUrl = input.trim();
+          
+          // If a standard Spotify URL is pasted, extract details and convert to embed format
+          const playlistMatch = embedUrl.match(/\/playlist\/([a-zA-Z0-9]+)/);
+          const albumMatch = embedUrl.match(/\/album\/([a-zA-Z0-9]+)/);
+          const trackMatch = embedUrl.match(/\/track\/([a-zA-Z0-9]+)/);
+          
+          if (playlistMatch) {
+            embedUrl = `https://open.spotify.com/embed/playlist/${playlistMatch[1]}?utm_source=generator&theme=0`;
+          } else if (albumMatch) {
+            embedUrl = `https://open.spotify.com/embed/album/${albumMatch[1]}?utm_source=generator&theme=0`;
+          } else if (trackMatch) {
+            embedUrl = `https://open.spotify.com/embed/track/${trackMatch[1]}?utm_source=generator&theme=0`;
+          }
+          
+          localStorage.setItem('spotify-widget-src', embedUrl);
+          const iframe = document.getElementById('spotify-widget-iframe');
+          if (iframe) iframe.src = embedUrl;
+        }
+      };
+      
+      const initSpotifyWidget = () => {
+        const savedSrc = localStorage.getItem('spotify-widget-src') || 'https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva?utm_source=generator&theme=0';
+        const iframe = document.getElementById('spotify-widget-iframe');
+        if (iframe) iframe.src = savedSrc;
+      };
+      
+      // 8. INITIALIZATION ON LOAD
       
       const initSystem = () => {
         loadState();
@@ -2534,6 +2909,12 @@
         const isAirplane = localStorage.getItem('setting-airplane') === 'true';
         const airplane = document.getElementById('status-airplane');
         if (airplane) airplane.style.display = isAirplane ? 'inline' : 'none';
+        
+        // Initialize customizable widgets
+        const savedCity = localStorage.getItem('weather-city') || 'London';
+        fetchWeather(savedCity);
+        fetchNews();
+        initSpotifyWidget();
         
         // Resize observer scales device mockup centered
         const device = document.getElementById('device');

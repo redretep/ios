@@ -2,6 +2,16 @@
 
 All notable changes to the iOS Homescreen project are documented here.
 
+## [1.3.0] - 2026-06-28
+### Added
+- **Spotlight Search Overlay**: Pulling down on any grid page reveals a translucent, blurred Apple-style search box that filters apps in real-time.
+- **App Library Swipe-Down to Search**: Swiping down from the top of the App Library scrollview automatically focuses the search input.
+- **Organic Snap-Back Animations**: Invalid drag-and-drop actions animate the app icon gliding smoothly back to its source position.
+- **Customizable Spotify Widget**: Replaced Battery+Music widgets with a wider Spotify iframe player widget (`344x152`) where users can customize the loaded playlist link.
+- **XML RSS Google News Feed**: Fetches real-time headlines securely through the user's custom proxy server, parsing XML natively on the client.
+- **Weather City Customizer**: Added location edit buttons to weather widgets to request and fetch real temperature updates dynamically.
+- **Spring Entrance Animations**: Added keyframe slide-down springs for the edit control bar and bounce entries for buttons.
+
 ## [1.2.0] - 2026-06-28
 ### Added
 - **iTunes Search API Integration**: In the "Add Web App" modal, searching will fetch matching App Store metadata and auto-fill app names and high-resolution icons.
