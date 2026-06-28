@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>iOS Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        iosGrayLight: '#a5a5a5',
+                        iosGrayLightHover: '#d9d9d9',
+                        iosGrayDark: '#333333',
+                        iosGrayDarkHover: '#4a4a4a',
+                        iosOrange: '#ff9f0a',
+                        iosOrangeHover: '#f1a33a',
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Standalone iOS web-app settings & scroll preventions */
+        body {
+            background-color: #000000;
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Responsive layout orientation handling */
+        @media (orientation: portrait) {
+            .portrait-only { display: grid !important; }
+            .landscape-only { display: none !important; }
+            .calculator-container { max-width: 420px; }
+        }
+        @media (orientation: landscape) {
+            .portrait-only { display: none !important; }
+            .landscape-only { display: grid !important; }
+            .calculator-container { max-width: 850px; }
+        }
+
+        /* iOS tap animations */
+        .btn-active-gray-light:active {
+            background-color: #d9d9d9 !important;
+        }
+        .btn-active-gray-dark:active {
+            background-color: #555555 !important;
+        }
+        .btn-active-orange:active {
+            background-color: #f1a33a !important;
+        }
+        
+        /* Operator active high-fidelity flash */
+        .operator-selected {
+            background-color: #ffffff !important;
+            color: #ff9f0a !important;
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center text-white overflow-hidden p-0 m-0">
+
+    <!-- FULLSCREEN SIMULATED iOS WEB CONTAINER -->
+    <div class="w-full h-full flex flex-col justify-between bg-black px-6 pt-6 pb-5 relative calculator-container safe-top safe-bottom">
+
+        <!-- DISPLAY SCREEN -->
+        <div id="display-container" class="flex-1 flex flex-col justify-end text-right select-none pr-2 pb-2 relative mt-4">
+            <!-- Active calculation indicator context -->
+            <div id="equation-indicator" class="text-neutral-500 text-sm h-5 pr-1 font-normal"></div>
+            <!-- Main calculation values -->
+            <div id="display" class="font-light tracking-tight transition-all duration-100 origin-right whitespace-nowrap overflow-hidden select-all" style="font-size: 6rem;">
+                0
+            </div>
+        </div>
+
+        <!-- KEYPAD WRAPPER -->
+        <div class="w-full">
+            
+            <!-- PORTRAIT KEYPAD (4x5) -->
+            <div class="portrait-only grid grid-cols-4 gap-4 w-full">
+                <!-- ROW 1 -->
+                <button onclick="handleClear()" id="btn-clear" class="aspect-square rounded-full flex items-center justify-center text-black text-3xl font-medium bg-iosGrayLight btn-active-gray-light transition-all duration-100">AC</button>
+                <button onclick="handleToggleSign()" class="aspect-square rounded-full flex items-center justify-center text-black text-3xl font-medium bg-iosGrayLight btn-active-gray-light transition-all duration-100">+/-</button>
+                <button onclick="handlePercentage()" class="aspect-square rounded-full flex items-center justify-center text-black text-3xl font-medium bg-iosGrayLight btn-active-gray-light transition-all duration-100">%</button>
+                <button onclick="handleOperator('÷')" id="op-divide" class="aspect-square rounded-full flex items-center justify-center text-white text-4xl font-medium bg-iosOrange btn-active-orange transition-all duration-150">÷</button>
+
+                <!-- ROW 2 -->
+                <button onclick="handleDigit('7')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">7</button>
+                <button onclick="handleDigit('8')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">8</button>
+                <button onclick="handleDigit('9')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">9</button>
+                <button onclick="handleOperator('×')" id="op-multiply" class="aspect-square rounded-full flex items-center justify-center text-white text-4xl font-medium bg-iosOrange btn-active-orange transition-all duration-150">×</button>
+
+                <!-- ROW 3 -->
+                <button onclick="handleDigit('4')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">4</button>
+                <button onclick="handleDigit('5')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">5</button>
+                <button onclick="handleDigit('6')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">6</button>
+                <button onclick="handleOperator('-')" id="op-subtract" class="aspect-square rounded-full flex items-center justify-center text-white text-4xl font-medium bg-iosOrange btn-active-orange transition-all duration-150">-</button>
+
+                <!-- ROW 4 -->
+                <button onclick="handleDigit('1')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">1</button>
+                <button onclick="handleDigit('2')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">2</button>
+                <button onclick="handleDigit('3')" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">3</button>
+                <button onclick="handleOperator('+')" id="op-add" class="aspect-square rounded-full flex items-center justify-center text-white text-4xl font-medium bg-iosOrange btn-active-orange transition-all duration-150">+</button>
+
+                <!-- ROW 5 -->
+                <button onclick="handleDigit('0')" class="col-span-2 rounded-full flex items-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100 pl-8" style="height: 100%; min-height: 72px;">0</button>
+                <button onclick="handleDecimal()" class="aspect-square rounded-full flex items-center justify-center text-white text-3xl font-medium bg-iosGrayDark btn-active-gray-dark transition-all duration-100">.</button>
+                <button onclick="handleEqual()" class="aspect-square rounded-full flex items-center justify-center text-white text-4xl font-medium bg-iosOrange btn-active-orange transition-all duration-100">=</button>
+            </div>
+
+            <!-- LANDSCAPE KEYPAD (10x5 Scientific) -->
+            <div class="landscape-only grid grid-cols-10 gap-3 w-full text-sm">
+                <!-- ROW 1 -->
+                <button onclick="handleOpenParenthesis()" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">(</button>
+                <button onclick="handleCloseParenthesis()" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">)</button>
+                <button onclick="handleMemory('mc')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">mc</button>
+                <button onclick="handleMemory('m+')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">m+</button>
+                <button onclick="handleMemory('m-')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">m-</button>
+                <button onclick="handleMemory('mr')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">mr</button>
+                <button onclick="handleClear()" id="btn-clear-ls" class="py-2.5 rounded-full flex items-center justify-center text-black font-semibold bg-iosGrayLight btn-active-gray-light transition shadow">AC</button>
+                <button onclick="handleToggleSign()" class="py-2.5 rounded-full flex items-center justify-center text-black font-semibold bg-iosGrayLight btn-active-gray-light transition shadow">+/-</button>
+                <button onclick="handlePercentage()" class="py-2.5 rounded-full flex items-center justify-center text-black font-semibold bg-iosGrayLight btn-active-gray-light transition shadow">%</button>
+                <button onclick="handleOperator('÷')" id="op-divide-ls" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-medium bg-iosOrange btn-active-orange transition shadow">÷</button>
+
+                <!-- ROW 2 -->
+                <button onclick="toggle2nd()" id="btn-2nd" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">2nd</button>
+                <button onclick="handleScientific('x²')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">x²</button>
+                <button onclick="handleScientific('x³')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">x³</button>
+                <button onclick="handleOperator('x^y')" id="op-pow" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">xʸ</button>
+                <button onclick="handleScientific('eˣ')" id="btn-ex" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">eˣ</button>
+                <button onclick="handleScientific('10ˣ')" id="btn-10x" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">10ˣ</button>
+                <button onclick="handleDigit('7')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">7</button>
+                <button onclick="handleDigit('8')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">8</button>
+                <button onclick="handleDigit('9')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">9</button>
+                <button onclick="handleOperator('×')" id="op-multiply-ls" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-medium bg-iosOrange btn-active-orange transition shadow">×</button>
+
+                <!-- ROW 3 -->
+                <button onclick="handleScientific('1/x')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">1/x</button>
+                <button onclick="handleScientific('²√x')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">²√x</button>
+                <button onclick="handleScientific('³√x')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">³√x</button>
+                <button onclick="handleOperator('y√x')" id="op-yroot" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">ʸ√x</button>
+                <button onclick="handleScientific('ln')" id="btn-ln" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">ln</button>
+                <button onclick="handleScientific('log₁₀')" id="btn-log" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">log₁₀</button>
+                <button onclick="handleDigit('4')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">4</button>
+                <button onclick="handleDigit('5')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">5</button>
+                <button onclick="handleDigit('6')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">6</button>
+                <button onclick="handleOperator('-')" id="op-subtract-ls" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-medium bg-iosOrange btn-active-orange transition shadow">-</button>
+
+                <!-- ROW 4 -->
+                <button onclick="handleTrig('sin')" id="btn-sin" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">sin</button>
+                <button onclick="handleTrig('cos')" id="btn-cos" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">cos</button>
+                <button onclick="handleTrig('tan')" id="btn-tan" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">tan</button>
+                <button onclick="handleScientific('e')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">e</button>
+                <button onclick="handleEE()" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">EE</button>
+                <button onclick="toggleRad()" id="btn-rad-toggle" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">Rad</button>
+                <button onclick="handleDigit('1')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">1</button>
+                <button onclick="handleDigit('2')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">2</button>
+                <button onclick="handleDigit('3')" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">3</button>
+                <button onclick="handleOperator('+')" id="op-add-ls" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-medium bg-iosOrange btn-active-orange transition shadow">+</button>
+
+                <!-- ROW 5 -->
+                <button onclick="handleTrig('sinh')" id="btn-sinh" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">sinh</button>
+                <button onclick="handleTrig('cosh')" id="btn-cosh" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">cosh</button>
+                <button onclick="handleTrig('tanh')" id="btn-tanh" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">tanh</button>
+                <button onclick="handleScientific('π')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">π</button>
+                <button onclick="handleScientific('Rand')" class="py-2.5 rounded-full flex items-center justify-center text-white font-medium bg-iosGrayDark btn-active-gray-dark transition shadow">Rand</button>
+                <button onclick="dummySync()" class="py-2.5 rounded-full flex items-center justify-center text-neutral-400 text-xs bg-neutral-900 border border-neutral-800 transition shadow">📱 Auto</button>
+                <button onclick="handleDigit('0')" class="col-span-2 py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">0</button>
+                <button onclick="handleDecimal()" class="py-2.5 rounded-full flex items-center justify-center text-white text-lg font-semibold bg-neutral-700 hover:bg-neutral-600 transition shadow">.</button>
+                <button onclick="handleEqual()" class="py-2.5 rounded-full flex items-center justify-center text-white text-xl font-semibold bg-iosOrange btn-active-orange transition shadow">=</button>
+            </div>
+
+        </div>
+
+        <!-- SIMULATED iOS HOME INDICATOR BAR -->
+        <div class="w-full flex justify-center pt-2">
+            <div class="w-32 h-1 bg-neutral-700 rounded-full"></div>
+        </div>
+
+    </div>
+
+    <!-- CALCULATOR APPLICATION CONTROLLER CODE -->
+    <script>
+        // --- BASIC APPLICATION STATE ---
+        let display = '0';
+        let prevValue = null;
+        let operator = null;
+        let isWaitingForOperand = false;
+        let activeOperator = null;
+        let memory = 0;
+        let isRad = false;
+        let is2nd = false;
+        let parenthesesStack = [];
+
+        // Audio Click Synth
+        let soundEnabled = true;
+
+        // Swipe Delete Helpers
+        let touchStartX = 0;
+
+        // --- CLICK AUDIO tick SYNTHESIS ---
+        function playClickSound() {
+            if (!soundEnabled) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1400, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.03);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.04);
+            } catch (e) {
+                // Silently fallback on browser autoplays policy block
+            }
+        }
+
+        // --- MATH CALCULATOR ENGINE ---
+        function calculate(a, b, op) {
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            if (isNaN(numA) || isNaN(numB)) return 'Error';
+
+            let result = 0;
+            switch (op) {
+                case '+': result = numA + numB; break;
+                case '-': result = numA - numB; break;
+                case '×': result = numA * numB; break;
+                case '÷': 
+                    if (numB === 0) return 'Error';
+                    result = numA / numB; 
+                    break;
+                case 'x^y': result = Math.pow(numA, numB); break;
+                case 'y√x': 
+                    if (numA < 0 && numB % 2 === 0) return 'Error';
+                    result = Math.pow(numA, 1 / numB); 
+                    break;
+                default: return b;
+            }
+
+            if (isNaN(result)) return 'NaN';
+            if (!isFinite(result)) return 'Infinity';
+
+            // High Precision limit handling
+            const maxPrecision = window.innerWidth > window.innerHeight ? 14 : 10;
+            const precisionResult = parseFloat(result.toPrecision(maxPrecision));
+
+            // Auto conversion to Scientific notation
+            const absRes = Math.abs(precisionResult);
+            if (absRes !== 0 && (absRes >= 1e9 || absRes < 1e-7)) {
+                return precisionResult.toExponential(5);
+            }
+
+            return precisionResult.toString();
+        }
+
+        // --- KEY ACTIONS HANDLERS ---
+        function handleDigit(digit) {
+            playClickSound();
+            clearOperatorHighlights();
+
+            if (display === 'Error' || display === 'NaN' || display === 'Infinity') {
+                display = digit;
+                isWaitingForOperand = false;
+                updateDisplay();
+                return;
+            }
+
+            if (isWaitingForOperand) {
+                display = digit;
+                isWaitingForOperand = false;
+                activeOperator = null;
+            } else {
+                const maxDigits = window.innerWidth > window.innerHeight ? 16 : 9;
+                const currentDigits = display.replace(/[.-]/g, '').length;
+                if (currentDigits >= maxDigits) return;
+
+                if (display === '0') {
+                    display = digit;
+                } else {
+                    display += digit;
+                }
+            }
+            updateDisplay();
+        }
+
+        function handleDecimal() {
+            playClickSound();
+            clearOperatorHighlights();
+
+            if (isWaitingForOperand) {
+                display = '0.';
+                isWaitingForOperand = false;
+                activeOperator = null;
+                updateDisplay();
+                return;
+            }
+
+            if (!display.includes('.')) {
+                display += '.';
+            }
+            updateDisplay();
+        }
+
+        function handleOperator(nextOperator) {
+            playClickSound();
+            
+            if (operator && isWaitingForOperand) {
+                operator = nextOperator;
+                activeOperator = nextOperator;
+                highlightActiveOperator();
+                return;
+            }
+
+            if (prevValue === null) {
+                prevValue = display;
+            } else if (operator) {
+                const result = calculate(prevValue, display, operator);
+                display = result;
+                prevValue = result;
+            }
+
+            isWaitingForOperand = true;
+            operator = nextOperator;
+            activeOperator = nextOperator;
+            highlightActiveOperator();
+            updateDisplay();
+        }
+
+        // --- EVALUATE ---
+        function handleEqual() {
+            playClickSound();
+            clearOperatorHighlights();
+            if (!operator || prevValue === null) return;
+
+            const result = calculate(prevValue, display, operator);
+            display = result;
+            prevValue = null;
+            operator = null;
+            activeOperator = null;
+            isWaitingForOperand = true;
+            updateDisplay();
+        }
+
+        // --- CLEAR ---
+        function handleClear() {
+            playClickSound();
+            clearOperatorHighlights();
+            const isClearAll = display === '0' || isWaitingForOperand;
+            
+            if (isClearAll) {
+                display = '0';
+                prevValue = null;
+                operator = null;
+                activeOperator = null;
+                isWaitingForOperand = false;
+                parenthesesStack = [];
+            } else {
+                display = '0';
+            }
+            updateDisplay();
+        }
+
+        function handleToggleSign() {
+            playClickSound();
+            if (display === '0') return;
+            if (display.startsWith('-')) {
+                display = display.slice(1);
+            } else {
+                display = '-' + display;
+            }
+            updateDisplay();
+        }
+
+        function handlePercentage() {
+            playClickSound();
+            const val = parseFloat(display);
+            if (isNaN(val)) return;
+
+            if (prevValue !== null && (operator === '+' || operator === '-')) {
+                const pctVal = (parseFloat(prevValue) * val) / 100;
+                display = pctVal.toString();
+            } else {
+                display = (val / 100).toString();
+            }
+            updateDisplay();
+        }
+
+        function handleBackspace() {
+            if (isWaitingForOperand) return;
+            if (display === 'Error' || display === 'NaN' || display === 'Infinity') {
+                display = '0';
+                updateDisplay();
+                return;
+            }
+            if (display.length <= 1 || (display.length === 2 && display.startsWith('-'))) {
+                display = '0';
+            } else {
+                display = display.slice(0, -1);
+            }
+            playClickSound();
+            updateDisplay();
+        }
+
+        // --- PARENTHESES CONTROLLER ---
+        function handleOpenParenthesis() {
+            playClickSound();
+            parenthesesStack.push({ prevValue, operator });
+            prevValue = null;
+            operator = null;
+            display = '0';
+            isWaitingForOperand = false;
+            updateDisplay();
+        }
+
+        function handleCloseParenthesis() {
+            playClickSound();
+            if (parenthesesStack.length === 0) return;
+
+            let currentResult = display;
+            if (operator && prevValue !== null) {
+                currentResult = calculate(prevValue, display, operator);
+            }
+
+            const outerContext = parenthesesStack.pop();
+            if (outerContext.operator) {
+                const finalResult = calculate(outerContext.prevValue, currentResult, outerContext.operator);
+                display = finalResult;
+                prevValue = outerContext.prevValue;
+                operator = outerContext.operator;
+            } else {
+                display = currentResult;
+                prevValue = null;
+                operator = null;
+            }
+            isWaitingForOperand = true;
+            updateDisplay();
+        }
+
+        // --- MEMORY CONTROLLER ---
+        function handleMemory(type) {
+            playClickSound();
+            const val = parseFloat(display);
+            if (isNaN(val)) return;
+
+            switch (type) {
+                case 'mc': memory = 0; break;
+                case 'm+': memory += val; isWaitingForOperand = true; break;
+                case 'm-': memory -= val; isWaitingForOperand = true; break;
+                case 'mr': display = memory.toString(); isWaitingForOperand = true; break;
+            }
+            updateDisplay();
+        }
+
+        // --- TRIG ENGINE (DEG vs RAD supported) ---
+        function handleTrig(func) {
+            playClickSound();
+            let val = parseFloat(display);
+            if (isNaN(val)) return;
+
+            const toRad = (v) => !isRad ? (v * Math.PI) / 180 : v;
+            const fromRad = (v) => !isRad ? (v * 180) / Math.PI : v;
+
+            let result = 0;
+            if (!is2nd) {
+                switch (func) {
+                    case 'sin': result = Math.sin(toRad(val)); break;
+                    case 'cos': result = Math.cos(toRad(val)); break;
+                    case 'tan': result = Math.tan(toRad(val)); break;
+                    case 'sinh': result = Math.sinh(val); break;
+                    case 'cosh': result = Math.cosh(val); break;
+                    case 'tanh': result = Math.tanh(val); break;
+                }
+            } else {
+                switch (func) {
+                    case 'sin': result = fromRad(Math.asin(val)); break;
+                    case 'cos': result = fromRad(Math.acos(val)); break;
+                    case 'tan': result = fromRad(Math.atan(val)); break;
+                    case 'sinh': result = Math.asinh(val); break;
+                    case 'cosh': result = Math.acosh(val); break;
+                    case 'tanh': result = Math.atanh(val); break;
+                }
+            }
+
+            if (isNaN(result) || !isFinite(result)) {
+                display = 'Error';
+            } else {
+                display = parseFloat(result.toFixed(10)).toString();
+            }
+            isWaitingForOperand = true;
+            updateDisplay();
+        }
+
+        // --- ADVANCED SCIENTIFIC CALCULATIONS ---
+        function handleScientific(func) {
+            playClickSound();
+            let val = parseFloat(display);
+            if (isNaN(val)) return;
+
+            let result = 0;
+            switch (func) {
+                case 'x²': result = Math.pow(val, 2); break;
+                case 'x³': result = Math.pow(val, 3); break;
+                case 'eˣ': result = is2nd ? Math.pow(2, val) : Math.exp(val); break;
+                case '10ˣ': result = is2nd ? Math.pow(Math.E, val) : Math.pow(10, val); break;
+                case '1/x': result = 1 / val; break;
+                case '²√x': result = Math.sqrt(val); break;
+                case '³√x': result = Math.cbrt(val); break;
+                case 'ln': result = is2nd ? Math.log2(val) : Math.log(val); break;
+                case 'log₁₀': result = is2nd ? Math.log(val) / Math.log(2) : Math.log10(val); break;
+                case 'π': result = Math.PI; break;
+                case 'e': result = Math.E; break;
+                case 'Rand': result = Math.random(); break;
+            }
+
+            if (isNaN(result) || !isFinite(result)) {
+                display = 'Error';
+            } else {
+                display = parseFloat(result.toFixed(10)).toString();
+            }
+            isWaitingForOperand = true;
+            updateDisplay();
+        }
+
+        function handleEE() {
+            playClickSound();
+            if (!display.includes('e')) {
+                display += 'e+';
+            }
+            updateDisplay();
+        }
+
+        function toggleRad() {
+            playClickSound();
+            isRad = !isRad;
+            const btn = document.getElementById('btn-rad-toggle');
+            if (isRad) {
+                btn.classList.add('bg-white', 'text-black');
+                btn.classList.remove('bg-iosGrayDark', 'text-white');
+            } else {
+                btn.classList.remove('bg-white', 'text-black');
+                btn.classList.add('bg-iosGrayDark', 'text-white');
+            }
+            updateDisplay();
+        }
+
+        function toggle2nd() {
+            playClickSound();
+            is2nd = !is2nd;
+            const btn = document.getElementById('btn-2nd');
+            if (is2nd) {
+                btn.classList.add('bg-white', 'text-black');
+                btn.classList.remove('bg-iosGrayDark', 'text-white');
+                document.getElementById('btn-ex').innerText = '2ˣ';
+                document.getElementById('btn-10x').innerText = 'eˣ';
+                document.getElementById('btn-ln').innerText = 'log₂';
+                document.getElementById('btn-log').innerText = 'log_y';
+                document.getElementById('btn-sin').innerText = 'asin';
+                document.getElementById('btn-cos').innerText = 'acos';
+                document.getElementById('btn-tan').innerText = 'atan';
+                document.getElementById('btn-sinh').innerText = 'asinh';
+                document.getElementById('btn-cosh').innerText = 'acosh';
+                document.getElementById('btn-tanh').innerText = 'atanh';
+            } else {
+                btn.classList.remove('bg-white', 'text-black');
+                btn.classList.add('bg-iosGrayDark', 'text-white');
+                document.getElementById('btn-ex').innerText = 'eˣ';
+                document.getElementById('btn-10x').innerText = '10ˣ';
+                document.getElementById('btn-ln').innerText = 'ln';
+                document.getElementById('btn-log').innerText = 'log₁₀';
+                document.getElementById('btn-sin').innerText = 'sin';
+                document.getElementById('btn-cos').innerText = 'cos';
+                document.getElementById('btn-tan').innerText = 'tan';
+                document.getElementById('btn-sinh').innerText = 'sinh';
+                document.getElementById('btn-cosh').innerText = 'cosh';
+                document.getElementById('btn-tanh').innerText = 'tanh';
+            }
+        }
+
+        function dummySync() {
+            playClickSound();
+            // Display helpful rotation notice
+            const indicator = document.getElementById('equation-indicator');
+            indicator.innerText = "To switch modes, rotate your device/window.";
+            setTimeout(() => { indicator.innerText = ""; }, 3000);
+        }
+
+        // --- HIGH FIDELITY OUTPUT AND FONT SCALER ---
+        function formatValue(val) {
+            if (val === 'Error' || val === 'NaN' || val === 'Infinity' || val === '-Infinity') return val;
+            if (val.includes('e')) {
+                const [base, exp] = val.split('e');
+                return `${parseFloat(base).toFixed(4)}e${exp}`;
+            }
+
+            const parts = val.split('.');
+            const intPart = parts[0];
+            const isNegative = intPart.startsWith('-');
+            const cleanInt = isNegative ? intPart.slice(1) : intPart;
+
+            let formattedInt = '';
+            if (cleanInt === '') {
+                formattedInt = isNegative ? '-' : '';
+            } else {
+                const parsed = parseInt(cleanInt, 10);
+                if (isNaN(parsed)) {
+                    formattedInt = cleanInt;
+                } else {
+                    formattedInt = (isNegative ? '-' : '') + parsed.toLocaleString('en-US');
+                }
+            }
+
+            if (parts.length > 1) {
+                return `${formattedInt}.${parts[1]}`;
+            }
+            return formattedInt;
+        }
+
+        function updateDisplay() {
+            const displayEl = document.getElementById('display');
+            const formatted = formatValue(display);
+            displayEl.innerText = formatted;
+
+            // Update Dynamic font sizing based on length to prevent layout breaks
+            const isLandscape = window.innerWidth > window.innerHeight;
+            const length = display.length;
+
+            if (isLandscape) {
+                if (length > 16) displayEl.style.fontSize = '2.5rem';
+                else if (length > 12) displayEl.style.fontSize = '3.5rem';
+                else displayEl.style.fontSize = '4rem';
+            } else {
+                if (length > 8) displayEl.style.fontSize = '3.2rem';
+                else if (length > 6) displayEl.style.fontSize = '4.5rem';
+                else displayEl.style.fontSize = '6rem';
+            }
+
+            // AC vs C toggle matching iOS dynamic state
+            const isClearAll = display === '0' || isWaitingForOperand;
+            const clearBtn = document.getElementById('btn-clear');
+            const clearBtnLs = document.getElementById('btn-clear-ls');
+            if (clearBtn) clearBtn.innerText = isClearAll ? 'AC' : 'C';
+            if (clearBtnLs) clearBtnLs.innerText = isClearAll ? 'AC' : 'C';
+
+            // Top Status Flag indicator update
+            const indicator = document.getElementById('equation-indicator');
+            if (parenthesesStack.length > 0) {
+                indicator.innerText = `Brackets: ${parenthesesStack.length} Nesting` + (isRad ? "  |  RAD" : "");
+            } else if (isRad) {
+                indicator.innerText = "RAD";
+            } else {
+                indicator.innerText = "";
+            }
+        }
+
+        // --- HIGHLIGHT OPERATORS ON PORTRAIT & LANDSCAPE ---
+        function clearOperatorHighlights() {
+            const ops = [
+                'op-divide', 'op-multiply', 'op-subtract', 'op-add',
+                'op-divide-ls', 'op-multiply-ls', 'op-subtract-ls', 'op-add-ls',
+                'op-pow', 'op-yroot'
+            ];
+            ops.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('operator-selected');
+            });
+        }
+
+        function highlightActiveOperator() {
+            clearOperatorHighlights();
+            if (!activeOperator) return;
+
+            let targets = [];
+            switch (activeOperator) {
+                case '÷': targets = ['op-divide', 'op-divide-ls']; break;
+                case '×': targets = ['op-multiply', 'op-multiply-ls']; break;
+                case '-': targets = ['op-subtract', 'op-subtract-ls']; break;
+                case '+': targets = ['op-add', 'op-add-ls']; break;
+                case 'x^y': targets = ['op-pow']; break;
+                case 'y√x': targets = ['op-yroot']; break;
+            }
+
+            targets.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('operator-selected');
+            });
+        }
+
+        // --- SWIPE GESTURE EVENT DETECTS ---
+        const displayContainer = document.getElementById('display-container');
+        displayContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        displayContainer.addEventListener('touchend', (e) => {
+            const distance = e.changedTouches[0].clientX - touchStartX;
+            if (Math.abs(distance) > 55) {
+                handleBackspace();
+            }
+        }, { passive: true });
+
+        // Touch simulation for desktop testing via mouse swipes
+        displayContainer.addEventListener('mousedown', (e) => {
+            touchStartX = e.clientX;
+        });
+        displayContainer.addEventListener('mouseup', (e) => {
+            const distance = e.clientX - touchStartX;
+            if (Math.abs(distance) > 55) {
+                handleBackspace();
+            }
+        });
+
+        // --- PHYSICAL DESKTOP KEYBOARD MAPPINGS ---
+        window.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (/[0-9]/.test(key)) {
+                handleDigit(key);
+            } else if (key === '.') {
+                handleDecimal();
+            } else if (key === '+') {
+                handleOperator('+');
+            } else if (key === '-') {
+                handleOperator('-');
+            } else if (key === '*' || key === 'x' || key === 'X') {
+                handleOperator('×');
+            } else if (key === '/') {
+                handleOperator('÷');
+            } else if (key === '=' || key === 'Enter') {
+                e.preventDefault();
+                handleEqual();
+            } else if (key === 'Backspace') {
+                handleBackspace();
+            } else if (key === 'Escape') {
+                handleClear();
+            }
+        });
+
+        // Dynamic adjust on viewport resizing trigger
+        window.addEventListener('resize', updateDisplay);
+        
+        // Initial paint
+        updateDisplay();
+    </script>
+</body>
+</html>
