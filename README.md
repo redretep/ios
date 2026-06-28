@@ -1,77 +1,70 @@
-# Homescreen
+# iOS Web Recreation (Look & Feel + Interaction)
 
-> Trying to recreate iOS on the web one screen/gesture/animation at a time
+A client-side web recreation designed to replicate the visual language, physics, and interactions of the iOS Homescreen. This project pairs HTML5 and CSS structures with native JavaScript to simulate app library, page navigation, and responsive touch/click actions. External applications can be embedded directly within the UI frame using standard iframe sandboxing.
 
-<img src="https://github.com/user-attachments/assets/b3ffb760-8fef-4c7e-8b8b-f620bb35a0d8" width="100%" alt="Homescreen">
+## 📱 Features
 
-## Introduction
+* **Device Wrapper & Environment:** Simulates a physical iPhone chassis (393px × 852px) featuring a custom Dynamic Island overlay.
+* **Apple Grid Engine:** A strict 4-column CSS layout matching native icon distribution.
+* **Glassmorphic Dock:** A persistent bottom action area utilizing CSS backdrop-filters (`blur()`) over alpha-translucent panels.
+* **JavaScript State Management:** Lightweight handlers managing core system events, layout tracking, and app opening/closing sequences.
+* **Web App Embeds:** Uses secure, sandboxed embedding wrappers to load live web applications natively inside app views without disrupting the master interface shell.
 
-This is an experiment, a work in progress. The goal is to try and recreate the look and feel of Apple iOS on the web. It is not meant to be a production ready application but rather a showcase of techniques demonstrating how close we can get to a native feeling app just using HTML, CSS and JavaScript.
+## 🛠️ Design & Architecture System
 
-The app is intentionally restricted to running as a standalone web app that is added to the home screen on iOS devices. It does not concern itself with being responsive or working in other browsing contexts.
+| Element | Specification | Technical Approach |
+| :--- | :--- | :--- |
+| **Typography** | SF Pro / System Fallbacks | `font-family: -apple-system, ...` |
+| **Icon Curve** | Continuous Corner Radius | `border-radius: 14px;` (approximated squircle) |
+| **Grid Spacing** | 4-Column Layout | `grid-template-columns: repeat(4, 1fr);` |
+| **Dock Blur** | Native Backdrop Translucency | `backdrop-filter: blur(30px);` |
+| **App Handling** | Embedded Web Apps | Sandboxed `<iframe>` tags with isolated context |
+| **Transitions** | Native App Opening Scaling | CSS custom transforms driven by JS state triggers |
 
-The rationale here is to narrow the scope and allow us as designer/developers to first and foremost focus on creating native feeling UI without having to worry about the myriad of different screen sizes, browser capabilities or input types other than touch.
+## 🚀 Getting Started
 
-The biggest challenge I see here is replicating native feeling gestures and animations.
+Because this project relies entirely on browser-native runtime engines (HTML5, CSS3, and Vanilla JavaScript), running it locally is straightforward and requires no build steps or bundlers.
 
-## Architecture
+### Prerequisites
 
-Currently the implemenation is built uses:
+* Any modern web browser supporting standard ES6 Javascript and CSS backdrop filters (Safari, Chrome, Firefox, or Edge).
+* A local text editor if you plan to append custom embeds.
 
-- [Preact](https://github.com/preactjs/preact) for routing, importing and rendering components
-- [Twind](https://github.com/tw-in-js/twind) for styling static screen and injecting CSS for animations
-- [Vite](https://github.com/vitejs/vite) for transpiling and building the app in development and production
+### Installation & Deployment
 
-Other than that it mostly dependency free i.e. no animation libraries. That said, I am not opposed to using libraries if they can help us achieve the desired look and feel.
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/redretep/ios.git](https://github.com/redretep/ios.git)
+   cd ios
 
-## Inspiration
+```
 
-This project has been inspired by the following wonderful projects:
+2. **Launch the interface:**
+Double-click the `index.html` file to view it directly via the `file://` protocol, or boot up a lightweight local static file server to handle embedded frame contexts reliably:
+```bash
+# Quick launch via Python's built-in module
+python3 -m http.server 8000
 
-- MacOS Web by [Puru Vijay](https://github.com/PuruVJ) – [App](macos-web.app) and [Repo](https://github.com/puruvj/macos-web)
-- WhatPWACanDo by [Danny Moerkerke](https://github.com/DannyMoerkerke) – [App](https://whatpwacando.today/) and [Repo](https://github.com/DannyMoerkerke/whatpwacando.today)
+```
 
-## Getting Started
 
-To get started with running the app locally:
+Once running, open your web browser and navigate to `http://localhost:8000`.
 
-1. Run `git clone https://github.com/lukejacksonn/homescreen.git` to clone the repository
-2. Run `npm install` to install the dependencies
-3. Run `npm start` to start the development server
+## ⚙️ How Embeds & Logic Work
 
-You can then open the development server in a web browser and the app should appear wrapped in a faux iOS device. Alternatively you can install the [Homescreen VSCode Extension](https://marketplace.visualstudio.com/items?itemName=lukejacksonn.homescreen) and open the app there (requires https which the dever server is configured to use by default).
+### 1. App Launch Mechanics (JavaScript)
 
-## Contributing
+The DOM structure uses `data-app` targets or event listeners assigned to individual `.app-item` containers. When clicked, JavaScript toggles active viewport states, scaling down the home screen grid while animating the target application view into full scale from the source icon coordinates.
 
-Obviously trying to recreate iOS is a massive undertaking. I have started with the Springboard and a few apps. I am not particularly precious about any of the existing implementations (a lot of this was just experimenting) and would welcome any improvements or additions.
+### 2. Sandbox Embedding Configuration
 
-The current state of the project is as follows:
+External web tools, retro games, or standalone web apps are mapped via `<iframe>` nodes. They are configured with targeted sandbox rules to optimize security while rendering within the system mock framework:
 
-### Springboard
+```html
+<iframe src="[https://example-app.com](https://example-app.com)" sandbox="allow-scripts allow-same-origin"></iframe>
 
-- Widget screen: Currently just screenshots of widgets
-- App grid screens: Swipe gesture and blur/scale on end screens
-- App library screens: List apps and animated search input
-- App launching: Launch and close animation with persisted app state
+```
 
-### Apps
+## 📄 License
 
-- ⌚️ Clock: Mostly static screens with navbar
-- 📷 Camera: Single static screen no functionality
-- ⚙️ Settings: Single static screen no functionality
-- 📱 App Store: Mostly static screens with navbar
-- 🧮 Calculator: Single static screen no functionality
-- 🖼️ Photos: Mostly static screens with navbar
-
-### Components
-
-- Device: A wrapper for the entire app that ensures a fullscreen device context
-- Screen: Wraps the content of a screen and handles padding and gutters
-- Launcher: Handles launching and closing animation of apps
-- Popover: Handles the overlaying of a bottom drawer
-
-Contribute to this project by adding more apps or improving the existing ones. The goal is to make the app as close to the native iOS experience as possible and highlight reusable components and patterns that can be used in other applications.
-
-## License
-
-MIT
+This project is open-source and available under the [MIT License](https://www.google.com/search?q=LICENSE).
