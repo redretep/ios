@@ -1,0 +1,2520 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Homescreen</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="application-name" content="Homescreen" />
+    <meta name="apple-mobile-web-app-title" content="Homescreen" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta
+      name="description"
+      content="A remake of the iOS homescreen using just HTML, CSS and JavaScript"
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/180.png" />
+    <link rel="icon" type="image/png" href="/icons/64.png" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap">
+    
+    <style>
+      /* --- GLOBAL STYLES & RESET --- */
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      ::-webkit-scrollbar {
+        display: none;
+      }
+      
+      /* --- SVG Icons Utility --- */
+      .svg-icon {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        display: inline-block;
+        vertical-align: middle;
+      }
+      
+      /* --- OUTER DEVICE FRAME --- */
+      .device-wrapper {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #222;
+        overflow: hidden;
+        position: relative;
+      }
+      
+      #device {
+        box-sizing: content-box; /* Exclude border from width/height coordinates */
+        width: 390px;
+        height: 844px;
+        position: relative;
+        border: 12px solid rgba(255, 255, 255, 0.05);
+        border-radius: 60px;
+        background-color: #000;
+        box-shadow: 0 0 3rem #111;
+        overflow: hidden;
+        transform-origin: center center;
+        flex-shrink: 0;
+      }
+      
+      /* Notch overlay on device screen */
+      .notch-overlay {
+        position: absolute;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 110px;
+        height: 30px;
+        background: black;
+        border-radius: 15px;
+        z-index: 10000;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      /* Screen container */
+      .screen-container {
+        width: 390px;
+        height: 844px;
+        position: relative;
+        border-radius: 48px;
+        overflow: hidden;
+        transform: translate(0, 0); /* Containing block for absolute elements */
+      }
+      
+      /* --- INNER WALLPAPER & BACKGROUND --- */
+      .wallpaper-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        overflow: hidden;
+      }
+      
+      .wallpaper-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #3a7bd5;
+        background: linear-gradient(to right, #3a7bd5, #3a6073);
+      }
+      
+      .blur-overlay {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+      }
+      
+      /* --- SYSTEM STATUS BAR --- */
+      .inner-status-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 47px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 26px 0 26px;
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        z-index: 5000;
+        pointer-events: none;
+      }
+      .inner-status-bar .right-icons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .inner-status-bar .status-icon {
+        width: 17px;
+        height: 17px;
+        fill: currentColor;
+      }
+      
+      /* --- SCREEN SCROLLER --- */
+      .screen-scroller-container {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10;
+        display: flex;
+        overflow: hidden;
+      }
+      
+      .screen-scroller {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        will-change: transform;
+      }
+      
+      .screen-page {
+        width: 100%;
+        flex: 0 0 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        padding: 47px 16px 34px 16px; /* Top Status Bar: 47, Bottom Indicator Space: 34 */
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* --- PAGE 0: WIDGETS --- */
+      .widgets-page {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+        overflow-y: auto;
+      }
+      
+      .widgets-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-top: 12px;
+        width: 100%;
+      }
+      
+      /* Widget footprint dimensions */
+      .widget-small {
+        width: 152px;
+        height: 152px;
+        border-radius: 28px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      }
+      .widget-medium {
+        width: 344px;
+        height: 152px;
+        border-radius: 28px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      }
+      .widget-large {
+        width: 344px;
+        height: 328px;
+        border-radius: 28px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      }
+      
+      /* --- PAGE 1: APP GRID (4x6 Matrix coordinates) --- */
+      .main-grid-container {
+        position: absolute;
+        top: 59px;
+        left: 0;
+        width: 390px;
+        height: 574px;
+      }
+      
+      .app-icon-wrapper {
+        position: absolute;
+        width: 76px;
+        height: 88px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        cursor: pointer;
+      }
+      
+      .app-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 13.5px;
+        background-size: cover;
+        background-position: center;
+        background-color: #333;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        transition: transform 0.1s ease;
+      }
+      .app-icon-wrapper:active:not(.wiggling) .app-icon {
+        transform: scale(0.95);
+      }
+      
+      .app-name {
+        color: white;
+        font-size: 11px;
+        margin-top: 6px; /* Text closer to app icons */
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        width: 76px;
+        height: 14px;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1;
+      }
+      
+      /* Wiggle Animation */
+      @keyframes wiggle {
+        0% { transform: rotate(-1.5deg) translate(-0.5px, 0.5px); }
+        50% { transform: rotate(1.5deg) translate(0.5px, -0.5px); }
+        100% { transform: rotate(-1.5deg) translate(-0.5px, 0.5px); }
+      }
+      .wiggling .app-icon {
+        animation: wiggle 0.28s ease-in-out infinite;
+      }
+      .wiggling:nth-child(2n) .app-icon {
+        animation-delay: -0.07s;
+        animation-duration: 0.24s;
+      }
+      .wiggling:nth-child(3n) .app-icon {
+        animation-delay: -0.15s;
+        animation-duration: 0.3s;
+      }
+      
+      /* Delete badge */
+      .delete-badge {
+        position: absolute;
+        top: -7px;
+        left: -7px;
+        width: 22px;
+        height: 22px;
+        background: #444;
+        color: white;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 900;
+        border: 1.5px solid white;
+        z-index: 10;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        cursor: pointer;
+      }
+      .wiggling .delete-badge {
+        display: flex;
+      }
+      
+      /* Drag over visual feedback */
+      .app-icon-wrapper.drag-over {
+        border: 2px dashed rgba(255,255,255,0.5);
+        border-radius: 13.5px;
+        background: rgba(255,255,255,0.1);
+      }
+      
+      /* --- PAGE 2: APP LIBRARY --- */
+      .library-search-container {
+        position: absolute;
+        top: 52px;
+        left: 16px;
+        width: 358px;
+        height: 36px;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        color: #aaa;
+        z-index: 500;
+      }
+      .library-search-container input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: white;
+        font-size: 17px;
+        width: 100%;
+        margin-left: 8px;
+      }
+      .library-search-container input::placeholder {
+        color: rgba(255,255,255,0.5);
+      }
+      .library-search-container .search-icon {
+        width: 16px;
+        height: 16px;
+        fill: rgba(255,255,255,0.5);
+      }
+      .dictation-icon {
+        width: 16px;
+        height: 16px;
+        fill: rgba(255,255,255,0.5);
+        margin-left: auto;
+        cursor: pointer;
+      }
+      
+      .library-grid-scrollview {
+        position: absolute;
+        top: 104px;
+        left: 16px;
+        width: 358px;
+        height: 706px;
+        overflow-y: auto;
+        padding-bottom: 40px;
+        transition: opacity 0.35s cubic-bezier(0.25, 0.86, 0.36, 1), transform 0.35s cubic-bezier(0.25, 0.86, 0.36, 1);
+      }
+      
+      .library-grid-layout {
+        display: grid;
+        grid-template-columns: 171px 171px;
+        grid-gap: 24px 16px;
+      }
+      
+      .library-folder-card-wrapper {
+        width: 171px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      
+      .library-folder-card {
+        width: 171px;
+        height: 171px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .library-folder-label {
+        width: 155px;
+        height: 18px;
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+        margin-top: 5px;
+        padding-left: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 18px;
+      }
+      
+      /* Quad-Node Spacing Inside Folder Container */
+      .folder-node {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .folder-node .app-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 13.5px;
+      }
+      
+      .node-1 { left: 12px; top: 12px; }
+      .node-2 { left: 95px; top: 12px; }
+      .node-3 { left: 12px; top: 95px; }
+      .node-4 { left: 95px; top: 95px; }
+      
+      /* Overflow mini cluster node 4 */
+      .node-4-cluster {
+        width: 64px;
+        height: 64px;
+        border-radius: 13.5px;
+        background: rgba(255,255,255,0.05);
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-gap: 4px;
+        padding: 6px;
+      }
+      .cluster-micro-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 5px;
+        background-size: cover;
+        background-position: center;
+        background-color: #333;
+      }
+      
+      /* Alphabetical list overlays */
+      .library-search-overlay {
+        position: absolute;
+        inset: 104px 0 0 0;
+        background: rgba(15, 15, 15, 0.35); /* Translucent glassmorphism */
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        z-index: 100;
+        padding: 16px 32px 16px 16px;
+        overflow-y: auto;
+        display: none;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.35s cubic-bezier(0.25, 0.86, 0.36, 1), transform 0.35s cubic-bezier(0.25, 0.86, 0.36, 1);
+      }
+      
+      .library-search-overlay.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      
+      .library-search-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .library-search-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        cursor: pointer;
+      }
+      .library-search-item .app-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 9px;
+      }
+      .library-search-item span {
+        color: white;
+        font-size: 16px;
+        font-weight: 500;
+      }
+      
+      .library-scrubber-track {
+        position: absolute;
+        top: 104px;
+        right: 0;
+        width: 16px;
+        height: 706px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+        color: rgba(255,255,255,0.4);
+        font-size: 10px;
+        font-weight: bold;
+        z-index: 200;
+        cursor: pointer;
+      }
+      
+      /* Full Folder Overlay View */
+      .folder-overlay-view {
+        position: absolute;
+        inset: 0;
+        background: rgba(15, 15, 15, 0.35); /* Translucent glassmorphism */
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        z-index: 8000;
+        display: none;
+        flex-direction: column;
+        padding: 60px 24px;
+        opacity: 0;
+        transform: scale(0.95);
+        transition: opacity 0.3s cubic-bezier(0.25, 0.86, 0.36, 1), transform 0.3s cubic-bezier(0.25, 0.86, 0.36, 1);
+      }
+      .folder-overlay-view.open {
+        display: flex;
+        opacity: 1;
+        transform: scale(1);
+      }
+      .folder-overlay-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+      .folder-overlay-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: white;
+      }
+      .folder-overlay-header button {
+        background: transparent;
+        border: none;
+        color: #0a84ff;
+        font-size: 17px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .folder-overlay-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-gap: 20px 16px;
+      }
+      .folder-overlay-grid .app-icon-wrapper {
+        position: relative !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 76px;
+        height: 88px;
+      }
+      
+      /* --- DOCK & BOTTOM UI --- */
+      .dock-container {
+        position: absolute;
+        top: 706px; /* Shift dock to the bottom of the screen right above home indicator space */
+        left: 12px;
+        width: 366px;
+        height: 104px;
+        background: rgba(255, 255, 255, 0.22);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-radius: 33.5px;
+        display: flex;
+        align-items: center;
+        padding: 11px 15px;
+        z-index: 30;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+      }
+      .dock-container.hidden {
+        transform: translateY(130%) scale(0.9);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .dock-container .app-icon-wrapper {
+        position: absolute;
+        top: 22px; /* Center dock apps vertically */
+        height: 60px;
+        width: 60px;
+      }
+      .dock-container .app-name {
+        display: none; /* No text labels in Dock */
+      }
+      
+      .page-indicators {
+        position: absolute;
+        top: 676px; /* Shift page indicators down slightly to align with the lowered dock */
+        left: 0;
+        width: 390px;
+        height: 26px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        z-index: 30;
+        transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
+      }
+      .page-indicators.hidden {
+        transform: translateY(80%) scale(0.8);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .page-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transition: background 0.2s ease;
+      }
+      .page-dot.active {
+        background: white;
+      }
+      
+      /* --- APP ZOOM-IN/OUT TRANSITIONS (Iframe Container) --- */
+      .app-popover {
+        position: absolute;
+        top: var(--y, 0px);
+        left: var(--x, 0px);
+        width: var(--w, 100%);
+        height: var(--h, 100%);
+        border-radius: 13.5px;
+        background: #020202;
+        color: #fff;
+        border: none;
+        z-index: 2000;
+        overflow: hidden;
+        display: none;
+        flex-direction: column;
+        opacity: 0;
+        transition: top 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                    left 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                    width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                    height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                    border-radius 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+                    opacity 0.25s ease;
+      }
+      
+      .app-popover.open {
+        top: 0px !important;
+        left: 0px !important;
+        width: 100% !important;
+        height: 100% !important;
+        border-radius: 48px !important;
+        opacity: 1 !important;
+        pointer-events: auto;
+      }
+      
+      .app-content {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .app-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: black;
+        overflow: hidden;
+      }
+      
+      .home-indicator {
+        position: absolute;
+        bottom: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 144px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: 3px;
+        border: none;
+        cursor: pointer;
+        z-index: 10000;
+      }
+      .home-indicator:hover {
+        background: rgba(255, 255, 255, 0.7);
+      }
+      
+      /* --- WIGGLE EDIT ZONE CONTROLS --- */
+      .edit-control-bar {
+        position: absolute;
+        top: 48px;
+        left: 16px;
+        right: 16px;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 14px;
+        padding: 8px 12px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 1500;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      }
+      .edit-control-bar.active {
+        display: flex;
+      }
+      .edit-btn {
+        background: rgba(255,255,255,0.15);
+        color: white;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .edit-btn:active {
+        background: rgba(255,255,255,0.3);
+      }
+      .plus-btn {
+        font-size: 20px;
+        font-weight: bold;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      .plus-btn:active {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      /* --- CUSTOM CONTEXT MENU FOR LAPTOP/PC --- */
+      .custom-context-menu {
+        position: absolute;
+        background: rgba(30, 30, 30, 0.9);
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
+        border-radius: 12px;
+        padding: 6px 0;
+        width: 170px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        z-index: 20000;
+        display: none;
+        flex-direction: column;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .context-menu-item {
+        padding: 8px 16px;
+        color: white;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .context-menu-item:hover {
+        background: rgba(255,255,255,0.1);
+      }
+      .context-menu-item.danger {
+        color: #ff453a;
+      }
+      
+      /* --- ADD APP MODAL --- */
+      .modal-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        overflow-y: auto; /* Enable scroll inside the modal wrapper */
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal-box {
+        width: 100%;
+        max-width: 340px;
+        background: #1c1c1e;
+        border-radius: 20px;
+        padding: 20px;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: auto;
+        margin-bottom: auto;
+      }
+      .modal-box h2 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        text-align: center;
+      }
+      .modal-label {
+        font-size: 12px;
+        color: #aaa;
+        font-weight: 600;
+        margin-bottom: -8px;
+      }
+      .modal-input {
+        background: #2c2c2e;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 12px;
+        color: white;
+        font-size: 14px;
+        width: 100%;
+        outline: none;
+      }
+      .modal-select-row {
+        display: flex;
+        gap: 8px;
+      }
+      .modal-tab-btn {
+        flex: 1;
+        background: #2c2c2e;
+        color: #888;
+        border: none;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: bold;
+        cursor: pointer;
+        text-align: center;
+      }
+      .modal-tab-btn.active {
+        background: #3a3a3c;
+        color: white;
+      }
+      .modal-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .modal-btn {
+        flex: 1;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-cancel {
+        background: #2c2c2e;
+        color: #ff453a;
+      }
+      .btn-save {
+        background: #0a84ff;
+        color: white;
+      }
+      
+      /* iTunes Search Results styling */
+      .app-search-results-list {
+        display: none;
+        max-height: 120px;
+        overflow-y: auto;
+        background: #2c2c2e;
+        border-radius: 10px;
+        padding: 6px;
+        flex-direction: column;
+        gap: 4px;
+        border: 1px solid #3a3a3c;
+      }
+      .app-search-result-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        border-radius: 6px;
+        cursor: pointer;
+        border-bottom: 1px solid #3a3a3c;
+      }
+      .app-search-result-item:hover {
+        background: #3a3a3c;
+      }
+      .app-search-result-item img {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+      }
+      .app-search-result-item span {
+        font-size: 12px;
+        color: white;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- SVG Symbol Declarations for status icons and search/mic -->
+    <svg style="display: none;">
+      <!-- Wifi Apple Icon -->
+      <symbol id="icon-wifi" viewBox="0 0 28 28">
+        <path d="M5.1055 12.5557C5.29007 12.7578 5.58011 12.749 5.77347 12.5381C7.94437 10.2441 10.8008 9.03125 13.9912 9.03125C17.208 9.03125 20.0733 10.2441 22.2354 12.5557C22.42 12.7402 22.7012 12.7314 22.8858 12.5381L24.1162 11.2988C24.292 11.123 24.292 10.8945 24.1514 10.7275C22.0332 8.11719 18.0869 6.24512 13.9912 6.24512C9.90433 6.24512 5.94925 8.1084 3.83987 10.7275C3.69925 10.8945 3.69925 11.123 3.86624 11.2988L5.1055 12.5557ZM8.77933 16.2119C8.99026 16.4141 9.27151 16.3965 9.47366 16.1768C10.5459 15.0078 12.2598 14.1816 14 14.1904C15.7491 14.1816 17.4629 15.0254 18.5616 16.2031C18.7461 16.4141 19.0098 16.4053 19.2119 16.2031L20.5918 14.8496C20.7588 14.6914 20.7764 14.4717 20.627 14.2959C19.2559 12.6348 16.751 11.4395 14 11.4395C11.2403 11.4395 8.73538 12.6348 7.36429 14.2959C7.21487 14.4717 7.23245 14.6826 7.39944 14.8496L8.77933 16.2119ZM14 21.0811C14.211 21.0811 14.3955 20.9844 14.7559 20.6416L16.9092 18.5674C17.0674 18.418 17.1026 18.1719 16.9619 17.9961C16.3467 17.2139 15.2305 16.5811 14 16.5811C12.7344 16.5811 11.6006 17.2402 10.9942 18.0664C10.8887 18.2246 10.9414 18.418 11.0908 18.5674L13.2442 20.6416C13.5957 20.9756 13.7891 21.0811 14 21.0811Z"/>
+      </symbol>
+      
+      <!-- Battery Apple Icon -->
+      <symbol id="icon-battery-75" viewBox="0 0 28 28">
+        <path d="M7.65269 18H18.0852C19.2961 18 20.2475 17.8713 20.9328 17.2087C21.6114 16.5461 21.7379 15.639 21.7379 14.4682V12.5318C21.7379 11.3545 21.6114 10.4475 20.9328 9.79128C20.2409 9.12866 19.2961 9 18.0852 9H7.63273C6.44178 9 5.49035 9.12866 4.81171 9.79128C4.12641 10.4539 4 11.361 4 12.5125V14.4682C4 15.639 4.12641 16.5525 4.80506 17.2087C5.49701 17.8713 6.44178 18 7.65269 18ZM7.4664 16.7391C6.7811 16.7391 6.13573 16.6426 5.76314 16.2888C5.39055 15.9285 5.30406 15.3174 5.30406 14.6483V12.3645C5.30406 11.6891 5.39055 11.0715 5.75649 10.7112C6.12908 10.351 6.7811 10.2609 7.47971 10.2609H18.2715C18.9634 10.2609 19.6088 10.351 19.9747 10.7112C20.3473 11.0715 20.4338 11.6826 20.4338 12.3517V14.6483C20.4338 15.3174 20.3473 15.9285 19.9747 16.2888C19.6088 16.649 18.9634 16.7391 18.2715 16.7391H7.4664ZM7.20692 15.9285H15.171C15.5835 15.9285 15.8297 15.8706 16.0027 15.7034C16.169 15.5361 16.2355 15.2981 16.2355 14.9056V12.0944C16.2355 11.6955 16.169 11.4575 16.0027 11.2966C15.8297 11.1294 15.5835 11.0715 15.171 11.0715H7.22023C6.79441 11.0715 6.54824 11.1294 6.37525 11.2902C6.20892 11.4575 6.14238 11.7019 6.14238 12.1072V14.9056C6.14238 15.3045 6.20892 15.5361 6.37525 15.7034C6.54824 15.8706 6.79441 15.9285 7.20692 15.9285ZM22.7092 15.2402C23.2615 15.208 24 14.5261 24 13.4968C24 12.4739 23.2615 11.7856 22.7092 11.7534V15.2402Z"/>
+      </symbol>
+      
+      <!-- Airplane Apple Icon -->
+      <symbol id="icon-airplane" viewBox="0 0 28 28">
+        <path d="M25.0391 13.6543C25.0303 12.6172 23.6152 11.7998 21.8838 11.7998H18.2715C17.7793 11.7998 17.5947 11.7119 17.2959 11.3867L11.3369 4.94434C11.1436 4.7334 10.915 4.62793 10.6602 4.62793H9.52637C9.29785 4.62793 9.16602 4.83887 9.27148 5.07617L12.3564 11.791L7.84766 12.292L6.23926 9.42676C6.11621 9.20703 5.93164 9.11035 5.6416 9.11035H5.24609C5.00879 9.11035 4.85059 9.26855 4.85059 9.50586V17.8027C4.85059 18.04 5.00879 18.1982 5.24609 18.1982H5.6416C5.93164 18.1982 6.11621 18.1016 6.23926 17.8818L7.84766 15.0078L12.3564 15.5176L9.27148 22.2324C9.16602 22.4697 9.29785 22.6807 9.52637 22.6807H10.6602C10.915 22.6807 11.1436 22.5664 11.3369 22.3643L17.2959 15.9219C17.5947 15.5967 17.7793 15.5088 18.2715 15.5088H21.8838C23.6152 15.5088 25.0303 14.6826 25.0391 13.6543Z"/>
+      </symbol>
+      
+      <!-- Magnifying Glass Search Icon -->
+      <symbol id="icon-search" viewBox="0 0 28 28">
+        <path d="M12.5322 19.0332C13.9297 19.0332 15.2393 18.6113 16.3291 17.8906L20.1787 21.749C20.4336 21.9951 20.7588 22.1182 21.1104 22.1182C21.8398 22.1182 22.376 21.5469 22.376 20.8262C22.376 20.4922 22.2617 20.167 22.0156 19.9209L18.1924 16.0801C18.9834 14.9551 19.4492 13.5928 19.4492 12.1162C19.4492 8.31055 16.3379 5.19922 12.5322 5.19922C8.73535 5.19922 5.61523 8.31055 5.61523 12.1162C5.61523 15.9219 8.72656 19.0332 12.5322 19.0332ZM12.5322 17.1875C9.74609 17.1875 7.46094 14.9023 7.46094 12.1162C7.46094 9.33008 9.74609 7.04492 12.5322 7.04492C15.3184 7.04492 17.6035 9.33008 17.6035 12.1162C17.6035 14.9023 15.3184 17.1875 12.5322 17.1875Z"/>
+      </symbol>
+      
+      <!-- Microphone dictation Icon -->
+      <symbol id="icon-microphone" viewBox="0 0 24 24">
+        <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zm5 9a5 5 0 0 1-10 0H5a7 7 0 0 0 13.92 0zM11 18.08V20H9v2h6v-2h-2v-1.92A7 7 0 0 0 17 11h-2a5 5 0 0 1-10 0H3a7 7 0 0 0 8 7.08z"/>
+      </symbol>
+    </svg>
+
+    <div class="device-wrapper" id="wrapper">
+      <div id="device">
+        <!-- Physical Notch Overlay -->
+        <div class="notch-overlay">
+          <!-- Plain black notch element -->
+        </div>
+        
+        <!-- Screen container -->
+        <div class="screen-container">
+          <!-- Wallpaper -->
+          <div class="wallpaper-container">
+            <img class="wallpaper-img" src="./public/images/image.jpeg">
+            <div class="blur-overlay"></div>
+          </div>
+          
+          <!-- Inner Status Bar -->
+          <header class="inner-status-bar">
+            <span id="inner-time">12:22</span>
+            <div class="right-icons">
+              <svg id="status-airplane" style="display:none;margin-right:2px;width:15px;height:15px;" class="status-icon"><use href="#icon-airplane"></use></svg>
+              <svg id="status-wifi" class="status-icon" style="width:15px;height:15px;"><use href="#icon-wifi"></use></svg>
+              <svg class="status-icon" style="width:20px;height:15px;"><use href="#icon-battery-75"></use></svg>
+            </div>
+          </header>
+          
+          <!-- Wiggle Mode Control Bar -->
+          <div class="edit-control-bar" id="edit-bar">
+            <button class="plus-btn" onclick="openAddAppModal()">+</button>
+            <div style="display:flex;gap:6px;">
+              <button class="edit-btn" onclick="promptWallpaperURL()">Set BG</button>
+              <button class="edit-btn" onclick="exitWiggleMode()" style="background:#0a84ff;">Done</button>
+            </div>
+          </div>
+          
+          <!-- Homescreen Scroller pages -->
+          <div class="screen-scroller-container">
+            <div class="screen-scroller" id="scroller">
+              
+              <!-- PAGE 0: WIDGETS -->
+              <div class="screen-page widgets-page">
+                <div class="widgets-list">
+                  <!-- Medium Widget: Weather -->
+                  <div class="widget-card widget-medium weather-widget" style="padding: 16px; background: linear-gradient(135deg, #1d976c, #93f9b9); color: white; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                      <div>
+                        <h3 style="font-size: 18px; font-weight: 600;">London</h3>
+                        <span style="font-size: 36px; font-weight: 200;">22°</span>
+                      </div>
+                      <span style="font-size: 28px;">Sunny</span>
+                    </div>
+                    <span style="font-size: 11px; opacity: 0.8;">H:24° L:14° - UV Index 5</span>
+                  </div>
+                  
+                  <!-- Small Widgets Row -->
+                  <div style="display:flex; justify-content:space-between; width: 100%;">
+                    <!-- Small Widget: Battery -->
+                    <div class="widget-card widget-small battery-widget" style="padding: 16px; background: rgba(255,255,255,0.08); color: white; display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 12px;">
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:10px; height:20px; border:2px solid #30d158; border-radius:3px; position:relative; background:#30d158;"></div>
+                        <div>
+                          <div style="font-size:10px; opacity:0.7;">iPhone</div>
+                          <div style="font-size:12px; font-weight:bold;">84%</div>
+                        </div>
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <div style="width:10px; height:20px; border:2px solid #30d158; border-radius:3px; position:relative; background:#30d158;"></div>
+                        <div>
+                          <div style="font-size:10px; opacity:0.7;">Watch</div>
+                          <div style="font-size:12px; font-weight:bold;">95%</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Small Widget: Music -->
+                    <div class="widget-card widget-small music-widget" style="padding: 16px; background: #232323; color: white; display: flex; flex-direction: column; justify-content: space-between;">
+                      <div style="font-size: 24px;">♫</div>
+                      <div>
+                        <h4 style="font-size: 12px; font-weight: 600; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Now Playing</h4>
+                        <p style="font-size: 10px; color: #aaa; margin:2px 0 0 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Antigravity Radio</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Medium Widget: Stocks or Secondary Info -->
+                  <div class="widget-card widget-medium" style="padding: 16px; background: #1c1c1e; color: white; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display:flex; justify-content:space-between;">
+                      <span style="font-weight:bold; font-size:14px;">AAPL</span>
+                      <span style="color:#30d158; font-weight:bold;">+2.45%</span>
+                    </div>
+                    <div style="font-size: 32px; font-weight: 200;">$184.20</div>
+                    <span style="font-size: 10px; color: #888;">Market Open</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- GRID PAGES ARE POPULATED DYNAMICALLY BY JAVASCRIPT -->
+              
+            </div>
+          </div>
+          
+          <!-- Dock Container -->
+          <div class="dock-container" id="homescreen-dock">
+            <!-- Populated dynamically by JS (holds 4 apps by default) -->
+          </div>
+          
+          <!-- Page Dots -->
+          <div class="page-indicators" id="page-indicators">
+            <!-- Populated dynamically by JS -->
+          </div>
+          
+          <!-- APP IFRAME POPOVER WINDOWS ARE GENERATED DYNAMICALLY BY JAVASCRIPT -->
+          <div id="popovers-container"></div>
+          
+          <!-- APP LIBRARY FOLDER FULL-SCREEN OVERLAY -->
+          <div class="folder-overlay-view" id="folder-overlay">
+            <div class="folder-overlay-header">
+              <h1 id="folder-overlay-title">Category</h1>
+              <button onclick="closeFolderOverlay()">Done</button>
+            </div>
+            <div class="folder-overlay-grid" id="folder-overlay-grid">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+          
+          <!-- CUSTOM DESKTOP CONTEXT MENU -->
+          <div class="custom-context-menu" id="desktop-menu">
+            <div class="context-menu-item" onclick="enterWiggleMode()">Edit Home Screen</div>
+            <div class="context-menu-item" onclick="openAddAppModal()">Add Web App</div>
+            <div class="context-menu-item" onclick="promptWallpaperURL()">Change Wallpaper</div>
+          </div>
+          <div class="custom-context-menu" id="app-menu">
+            <div class="context-menu-item" id="ctx-open-app">Open App</div>
+            <div class="context-menu-item danger" id="ctx-delete-app">Delete App</div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <!-- ADD APP MODAL DIALOG -->
+    <div class="modal-overlay" id="add-app-modal">
+      <div class="modal-box">
+        <h2>Add Web App</h2>
+        
+        <span class="modal-label">App Store Search (iTunes API)</span>
+        <input type="text" id="modal-app-store-search" class="modal-input" placeholder="Search name & icon..." oninput="searchAppStore(this.value)">
+        <div class="app-search-results-list" id="app-store-results"></div>
+        
+        <span class="modal-label">App Name</span>
+        <input type="text" id="modal-app-name" class="modal-input" placeholder="e.g. Google">
+        
+        <span class="modal-label">Icon Image</span>
+        <div class="modal-select-row">
+          <button class="modal-tab-btn active" id="icon-tab-url" onclick="switchIconMode('url')">URL</button>
+          <button class="modal-tab-btn" id="icon-tab-upload" onclick="switchIconMode('upload')">File</button>
+          <button class="modal-tab-btn" id="icon-tab-emoji" onclick="switchIconMode('emoji')">Emoji</button>
+        </div>
+        <input type="text" id="modal-app-icon-url" class="modal-input" placeholder="Icon URL">
+        <input type="file" id="modal-app-icon-file" class="modal-input" style="display:none;" accept="image/*">
+        <input type="text" id="modal-app-icon-emoji" class="modal-input" style="display:none;" placeholder="Pick an emoji: 🌐">
+        
+        <span class="modal-label">App Target Source</span>
+        <div class="modal-select-row">
+          <button class="modal-tab-btn active" id="src-tab-url" onclick="switchSrcMode('url')">Embed URL</button>
+          <button class="modal-tab-btn" id="src-tab-upload" onclick="switchSrcMode('upload')">File/Folder</button>
+          <button class="modal-tab-btn" id="src-tab-html" onclick="switchSrcMode('html')">Paste HTML</button>
+        </div>
+        <input type="text" id="modal-app-src-url" class="modal-input" placeholder="https://wikipedia.org">
+        <div id="modal-app-src-upload-wrapper" style="display:none; flex-direction:column; gap:6px;">
+          <span style="font-size:10px; color:#aaa; font-weight:600;">Single HTML File:</span>
+          <input type="file" id="modal-app-src-file" class="modal-input" accept=".html">
+          <span style="font-size:10px; color:#aaa; font-weight:600;">Folder (contains index.html + assets):</span>
+          <input type="file" id="modal-app-src-folder" class="modal-input" webkitdirectory directory multiple>
+        </div>
+        <textarea id="modal-app-src-html" class="modal-input" style="display:none;height:60px;resize:none;" placeholder="<html><body>Hello</body></html>"></textarea>
+        
+        <div class="modal-buttons">
+          <button class="modal-btn btn-cancel" onclick="closeAddAppModal()">Cancel</button>
+          <button class="modal-btn btn-save" onclick="saveCustomApp()">Save</button>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module">
+      // 1. DATA AND STATE PERSISTENCE
+      
+      const PREINSTALLED_APPS = {
+        'settings': { id: 'settings', name: 'Settings', icon: './public/images/Icon=Settings.png', url: 'settings.html', htmlContent: '', custom: false },
+        'calculator': { id: 'calculator', name: 'Calculator', icon: './public/images/Icon=Calculator.png', url: 'https://www.desmos.com/scientific', custom: false },
+        'camera': { id: 'camera', name: 'Camera', icon: './public/images/Icon=Camera.png', url: 'https://webrtc.github.io/samples/src/content/getusermedia/canvas/', custom: false },
+        'clock': { id: 'clock', name: 'Clock', icon: './public/images/Icon=Clock.png', url: 'https://embed.time.is/', custom: false },
+        'photos': { id: 'photos', name: 'Photos', icon: './public/images/Icon=Photos.png', url: 'https://unsplash.com', custom: false },
+        'app-store': { id: 'app-store', name: 'App Store', icon: './public/images/Icon=AppStore.png', url: 'https://www.apple.com/app-store/', custom: false },
+        'safari': { id: 'safari', name: 'Safari', icon: './public/images/Icon=Safari.png', url: 'https://www.google.com/search?igu=1', custom: false },
+        'message': { id: 'message', name: 'Messages', icon: './public/images/Icon=Message.png', url: 'https://www.apple.com/ios/messages/', custom: false },
+        'music': { id: 'music', name: 'Music', icon: './public/images/Icon=Music.png', url: 'https://open.spotify.com/embed/playlist/37i9dQZF1DX10zKzsJ2jva', custom: false }
+      };
+      
+      let allApps = {};
+      let layout = [];
+      let dock = [];
+      let wallpaper = '';
+      
+      // Load layouts and custom apps from localStorage
+      const loadState = () => {
+        const storedApps = localStorage.getItem('homescreen-apps-list');
+        if (storedApps) {
+          allApps = JSON.parse(storedApps);
+        } else {
+          allApps = { ...PREINSTALLED_APPS };
+        }
+        
+        // Safety check to restore Settings app if deleted somehow
+        if (!allApps.settings) {
+          allApps.settings = { ...PREINSTALLED_APPS.settings };
+        }
+        // Force settings app url update to settings.html
+        allApps.settings.url = 'settings.html';
+        allApps.settings.htmlContent = '';
+        
+        const storedLayout = localStorage.getItem('homescreen-layout-pages');
+        if (storedLayout) {
+          layout = JSON.parse(storedLayout);
+        } else {
+          layout = [
+            ['app-store', 'calculator', 'camera', 'clock', 'photos', 'settings']
+          ];
+        }
+        
+        // Safety check to ensure settings is present in layout pages if missing
+        let hasSettings = false;
+        layout.forEach(page => { if (page.includes('settings')) hasSettings = true; });
+        if (!hasSettings) {
+          if (layout.length > 0) layout[0].push('settings');
+          else layout = [['settings']];
+        }
+        
+        const storedDock = localStorage.getItem('homescreen-layout-dock');
+        if (storedDock) {
+          dock = JSON.parse(storedDock);
+        } else {
+          dock = ['safari', 'message', 'music'];
+        }
+        
+        wallpaper = localStorage.getItem('homescreen-wallpaper') || './public/images/image.jpeg';
+      };
+      
+      const saveState = () => {
+        localStorage.setItem('homescreen-apps-list', JSON.stringify(allApps));
+        localStorage.setItem('homescreen-layout-pages', JSON.stringify(layout));
+        localStorage.setItem('homescreen-layout-dock', JSON.stringify(dock));
+      };
+      
+      // 2. RENDERING LOGIC
+      
+      let isWiggleMode = false;
+      let totalPages = 3;
+      let currentI = 1;
+      let longPressTimeout = null;
+      let isDraggingIcon = false;
+      
+      const renderAll = () => {
+        const scroller = document.getElementById('scroller');
+        
+        // Remove all grid pages and library pages (everything after Page 0)
+        while (scroller.children.length > 1) {
+          scroller.removeChild(scroller.lastElementChild);
+        }
+        
+        // Render grid pages using strict 4x6 Matrix coordinates
+        const colCoords = [27, 119, 211, 303];
+        const rowCoords = [59, 147, 235, 323, 411, 499];
+        
+        layout.forEach((pageAppIds, pageIdx) => {
+          const pageDiv = document.createElement('div');
+          pageDiv.className = 'screen-page';
+          
+          const gridDiv = document.createElement('div');
+          gridDiv.className = 'main-grid-container';
+          
+          pageAppIds.forEach((appId, appIdx) => {
+            const app = allApps[appId];
+            if (!app) return;
+            
+            // Calculate matrix coordinates
+            const col = appIdx % 4;
+            const row = Math.floor(appIdx / 4);
+            
+            if (row >= 6) return; // Prevent layout overflow beyond grid bounds
+            
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = 'app-icon-wrapper';
+            iconWrapper.dataset.page = pageIdx;
+            iconWrapper.dataset.idx = appIdx;
+            iconWrapper.dataset.appId = appId;
+            
+            // Position wrapper absolute using layout specs offset relative to centering
+            iconWrapper.style.left = `${colCoords[col] - 8}px`;
+            iconWrapper.style.top = `${rowCoords[row]}px`;
+            
+            if (isWiggleMode) {
+              iconWrapper.classList.add('wiggling');
+            }
+            
+            // Delete badge (not shown for settings app)
+            if (appId !== 'settings') {
+              const deleteBadge = document.createElement('div');
+              deleteBadge.className = 'delete-badge';
+              deleteBadge.innerText = '−';
+              deleteBadge.onclick = (e) => {
+                e.stopPropagation();
+                deleteApp(pageIdx, appIdx, appId);
+              };
+              iconWrapper.appendChild(deleteBadge);
+            }
+            
+            // Icon element
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'app-icon';
+            if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+              iconDiv.style.backgroundImage = `url('${app.icon}')`;
+            } else {
+              // Emoji icon
+              iconDiv.style.background = '#2c2c2e';
+              iconDiv.style.display = 'flex';
+              iconDiv.style.alignItems = 'center';
+              iconDiv.style.justifyContent = 'center';
+              iconDiv.style.fontSize = '30px';
+              iconDiv.innerText = app.icon || '🌐';
+            }
+            iconWrapper.appendChild(iconDiv);
+            
+            // Name label
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'app-name';
+            nameSpan.innerText = app.name;
+            iconWrapper.appendChild(nameSpan);
+            
+            // Interaction handlers
+            bindInteractionListeners(iconWrapper, appId, pageIdx, appIdx);
+            
+            gridDiv.appendChild(iconWrapper);
+          });
+          
+          pageDiv.appendChild(gridDiv);
+          scroller.appendChild(pageDiv);
+        });
+        
+        // Render App Library Page
+        renderAppLibraryPage();
+        
+        // Render Dock
+        renderDock();
+        
+        // Render Page Dots
+        renderPageDots();
+        
+        // Update scroller grid page counts and enforce initial scroll translation positions
+        totalPages = layout.length + 2;
+        updateScrollerPosition(currentI);
+        
+        // Re-generate Iframe Popovers in background
+        generateIframePopovers();
+        
+        // Enforce wallpaper style (url or custom CSS preset gradient)
+        const wallImg = document.querySelector('.wallpaper-img');
+        if (wallpaper.startsWith('linear-gradient')) {
+          wallImg.style.display = 'none';
+          document.querySelector('.wallpaper-container').style.background = wallpaper;
+        } else {
+          wallImg.style.display = 'block';
+          wallImg.src = wallpaper;
+        }
+      };
+      
+      const renderDock = () => {
+        const dockContainer = document.getElementById('homescreen-dock');
+        dockContainer.innerHTML = '';
+        
+        const N = dock.length;
+        const gap = (366 - N * 60) / (N + 1); // Centered dynamically with equal horizontal padding & margins
+        
+        dock.forEach((appId, dockIdx) => {
+          const app = allApps[appId];
+          if (!app) return;
+          
+          const iconWrapper = document.createElement('div');
+          iconWrapper.className = 'app-icon-wrapper';
+          iconWrapper.dataset.dock = 'true';
+          iconWrapper.dataset.idx = dockIdx;
+          iconWrapper.dataset.appId = appId;
+          
+          // Dock Y line fixed centered vertically
+          const left = gap + dockIdx * (60 + gap);
+          iconWrapper.style.left = `${left}px`;
+          iconWrapper.style.top = '22px';
+          
+          if (isWiggleMode) {
+            iconWrapper.classList.add('wiggling');
+          }
+          
+          const iconDiv = document.createElement('div');
+          iconDiv.className = 'app-icon';
+          if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+            iconDiv.style.backgroundImage = `url('${app.icon}')`;
+          } else {
+            iconDiv.style.background = '#2c2c2e';
+            iconDiv.style.display = 'flex';
+            iconDiv.style.alignItems = 'center';
+            iconDiv.style.justifyContent = 'center';
+            iconDiv.style.fontSize = '30px';
+            iconDiv.innerText = app.icon || '🌐';
+          }
+          iconWrapper.appendChild(iconDiv);
+          
+          bindInteractionListeners(iconWrapper, appId, -1, dockIdx);
+          
+          dockContainer.appendChild(iconWrapper);
+        });
+      };
+      
+      const renderPageDots = () => {
+        const dotsContainer = document.getElementById('page-indicators');
+        dotsContainer.innerHTML = '';
+        
+        layout.forEach((_, idx) => {
+          const dot = document.createElement('div');
+          dot.className = 'page-dot';
+          if (currentI === idx + 1) dot.classList.add('active');
+          dotsContainer.appendChild(dot);
+        });
+        
+        if (currentI === 0 || currentI === layout.length + 1) {
+          dotsContainer.classList.add('hidden');
+        } else {
+          dotsContainer.classList.remove('hidden');
+        }
+      };
+      
+      const renderAppLibraryPage = () => {
+        const scroller = document.getElementById('scroller');
+        
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'screen-page';
+        pageDiv.style.padding = '0'; // App Library has its own safe area offsets
+        
+        // 1. Fixed Search Bar (x:16, y:52, w:358, h:36)
+        const searchDiv = document.createElement('div');
+        searchDiv.className = 'library-search-container';
+        searchDiv.innerHTML = `
+          <svg class="search-icon"><use href="#icon-search"></use></svg>
+          <input type="search" id="lib-search-input" placeholder="App Library">
+          <svg class="dictation-icon"><use href="#icon-microphone"></use></svg>
+        `;
+        pageDiv.appendChild(searchDiv);
+        
+        // 2. Category Grid System Scrollview (x:16, y:104, w:358, h:706)
+        const scrollView = document.createElement('div');
+        scrollView.className = 'library-grid-scrollview';
+        scrollView.id = 'lib-grid-scroll';
+        
+        const gridLayout = document.createElement('div');
+        gridLayout.className = 'library-grid-layout';
+        
+        // Divide apps into folders
+        const categories = {
+          'Social & Entertainment': [],
+          'Utilities & Settings': []
+        };
+        
+        Object.keys(allApps).forEach(id => {
+          const app = allApps[id];
+          if (id === 'app-store' || id === 'safari' || id === 'message' || id === 'music' || app.custom) {
+            categories['Social & Entertainment'].push(app);
+          } else {
+            categories['Utilities & Settings'].push(app);
+          }
+        });
+        
+        Object.keys(categories).forEach(catName => {
+          const appsList = categories[catName];
+          
+          const folderWrapper = document.createElement('div');
+          folderWrapper.className = 'library-folder-card-wrapper';
+          
+          const card = document.createElement('div');
+          card.className = 'library-folder-card';
+          
+          // Long press empty folder context menu
+          card.oncontextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openGlobalContextMenu(e.clientX, e.clientY);
+          };
+          
+          // Render Node quadrant slots (12 pt padding, 19 pt spacing, 60x60 icons)
+          const nodeOffsets = [
+            { class: 'node-1', l: 12, t: 12 },
+            { class: 'node-2', l: 95, t: 12 },
+            { class: 'node-3', l: 12, t: 95 },
+            { class: 'node-4', l: 95, t: 95 }
+          ];
+          
+          if (appsList.length <= 4) {
+            // Case 1: Folder with <= 4 Apps -> Direct Launch Icons
+            appsList.forEach((app, idx) => {
+              const node = document.createElement('div');
+              node.className = `folder-node ${nodeOffsets[idx].class}`;
+              node.onclick = () => launchApp(app.id);
+              
+              // Scale down on click/long press
+              node.addEventListener('pointerdown', () => node.style.transform = 'scale(0.95)');
+              node.addEventListener('pointerup', () => node.style.transform = 'scale(1)');
+              
+              const icon = document.createElement('div');
+              icon.className = 'app-icon';
+              if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+                icon.style.backgroundImage = `url('${app.icon}')`;
+              } else {
+                icon.style.background = '#2c2c2e';
+                icon.style.display = 'flex';
+                icon.style.alignItems = 'center';
+                icon.style.justifyContent = 'center';
+                icon.style.fontSize = '24px';
+                icon.innerText = app.icon || '🌐';
+              }
+              node.appendChild(icon);
+              card.appendChild(node);
+            });
+          } else {
+            // Case 2: Folder with > 4 Apps -> 3 Large App Icons, 4th conversions to micro mini grid
+            for (let idx = 0; idx < 3; idx++) {
+              const app = appsList[idx];
+              const node = document.createElement('div');
+              node.className = `folder-node ${nodeOffsets[idx].class}`;
+              node.onclick = () => launchApp(app.id);
+              
+              const icon = document.createElement('div');
+              icon.className = 'app-icon';
+              if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+                icon.style.backgroundImage = `url('${app.icon}')`;
+              } else {
+                icon.style.background = '#2c2c2e';
+                icon.style.display = 'flex';
+                icon.style.alignItems = 'center';
+                icon.style.justifyContent = 'center';
+                icon.style.fontSize = '24px';
+                icon.innerText = app.icon || '🌐';
+              }
+              node.appendChild(icon);
+              card.appendChild(node);
+            }
+            
+            // Node 4 converts to micro-grid
+            const clusterNode = document.createElement('div');
+            clusterNode.className = 'folder-node node-4';
+            clusterNode.onclick = () => openFolderOverlay(catName, appsList);
+            
+            const clusterGrid = document.createElement('div');
+            clusterGrid.className = 'node-4-cluster';
+            
+            for (let idx = 3; idx < Math.min(7, appsList.length); idx++) {
+              const app = appsList[idx];
+              const microIcon = document.createElement('div');
+              microIcon.className = 'cluster-micro-icon';
+              if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+                microIcon.style.backgroundImage = `url('${app.icon}')`;
+              } else {
+                microIcon.style.background = '#333';
+                microIcon.style.display = 'flex';
+                microIcon.style.alignItems = 'center';
+                microIcon.style.justifyContent = 'center';
+                microIcon.style.fontSize = '10px';
+                microIcon.innerText = app.icon || '🌐';
+              }
+              clusterGrid.appendChild(microIcon);
+            }
+            clusterNode.appendChild(clusterGrid);
+            card.appendChild(clusterNode);
+          }
+          
+          folderWrapper.appendChild(card);
+          
+          // Category Label Text below container (x: Same+8, y: Card y+176)
+          const label = document.createElement('div');
+          label.className = 'library-folder-label';
+          label.innerText = catName;
+          folderWrapper.appendChild(label);
+          
+          gridLayout.appendChild(folderWrapper);
+        });
+        
+        scrollView.appendChild(gridLayout);
+        pageDiv.appendChild(scrollView);
+        
+        // 3. Alphabetical list search transition overlay
+        const overlayDiv = document.createElement('div');
+        overlayDiv.className = 'library-search-overlay';
+        overlayDiv.id = 'lib-search-overlay';
+        overlayDiv.innerHTML = `<div class="library-search-list" id="lib-search-results"></div>`;
+        pageDiv.appendChild(overlayDiv);
+        
+        // 4. A-Z track scrubber
+        const scrubber = document.createElement('div');
+        scrubber.className = 'library-scrubber-track';
+        scrubber.id = 'lib-scrubber';
+        scrubber.style.display = 'none'; // Visible only during active search
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#';
+        scrubber.innerHTML = alphabet.split('').map(char => `<span>${char}</span>`).join('');
+        pageDiv.appendChild(scrubber);
+        
+        scroller.appendChild(pageDiv);
+        
+        // Bind search input transition overlay animations
+        setTimeout(() => {
+          const input = document.getElementById('lib-search-input');
+          if (input) {
+            input.onfocus = () => {
+              // Fade out 2-column layout scroll view
+              const scroll = document.getElementById('lib-grid-scroll');
+              scroll.style.opacity = '0';
+              scroll.style.transform = 'scale(0.95)';
+              scroll.style.pointerEvents = 'none';
+              
+              // Fade in alphabetical list view
+              const overlay = document.getElementById('lib-search-overlay');
+              overlay.style.display = 'block';
+              overlay.offsetHeight; // force reflow
+              overlay.classList.add('active');
+              
+              document.getElementById('lib-scrubber').style.display = 'flex';
+              filterLibrary('');
+            };
+            input.onblur = () => {
+              setTimeout(() => {
+                const scroll = document.getElementById('lib-grid-scroll');
+                scroll.style.display = 'block';
+                scroll.offsetHeight; // Force reflow
+                scroll.style.opacity = '1';
+                scroll.style.transform = 'scale(1)';
+                scroll.style.pointerEvents = 'auto';
+                
+                const overlay = document.getElementById('lib-search-overlay');
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                  if (!overlay.classList.contains('active')) {
+                    overlay.style.display = 'none';
+                  }
+                }, 350);
+                
+                document.getElementById('lib-scrubber').style.display = 'none';
+              }, 200);
+            };
+            input.oninput = (e) => filterLibrary(e.target.value);
+          }
+          
+          // Scrubber interactive jump logic
+          const scrubberEl = document.getElementById('lib-scrubber');
+          if (scrubberEl) {
+            const handleScrub = (clientY) => {
+              const rect = scrubberEl.getBoundingClientRect();
+              const relativeY = clientY - rect.top;
+              const percent = Math.max(0, Math.min(1, relativeY / rect.height));
+              const idx = Math.floor(percent * alphabet.length);
+              const letter = alphabet[idx];
+              if (letter) {
+                const targetItem = Array.from(document.querySelectorAll('.library-search-item')).find(el => {
+                  const name = el.querySelector('span').innerText.trim().toUpperCase();
+                  return name.startsWith(letter);
+                });
+                if (targetItem) {
+                  const overlay = document.getElementById('lib-search-overlay');
+                  overlay.scrollTop = targetItem.offsetTop - 16;
+                }
+              }
+            };
+            
+            scrubberEl.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              handleScrub(e.clientY);
+              
+              const moveHandler = (moveEvent) => {
+                handleScrub(moveEvent.clientY);
+              };
+              const upHandler = () => {
+                window.removeEventListener('pointermove', moveHandler);
+                window.removeEventListener('pointerup', upHandler);
+              };
+              window.addEventListener('pointermove', moveHandler);
+              window.addEventListener('pointerup', upHandler);
+            });
+          }
+        }, 50);
+      };
+      
+      const filterLibrary = (query) => {
+        const results = document.getElementById('lib-search-results');
+        if (!results) return;
+        
+        // Search and sort alphabetical A-Z
+        const filtered = Object.values(allApps)
+          .filter(a => a.name.toLowerCase().includes(query.toLowerCase()))
+          .sort((a, b) => a.name.localeCompare(b.name));
+          
+        results.innerHTML = filtered.map(a => `
+          <div class="library-search-item" onclick="launchApp('${a.id}')">
+            <div class="app-icon" ${a.icon.startsWith('.') || a.icon.startsWith('http') || a.icon.startsWith('data:') ? `style="background-image: url('${a.icon}');"` : ''}>
+              ${a.icon.startsWith('.') || a.icon.startsWith('http') || a.icon.startsWith('data:') ? '' : a.icon}
+            </div>
+            <span>${a.name}</span>
+          </div>
+        `).join('');
+      };
+      
+      // Full Folder expanded Overlay
+      window.openFolderOverlay = (title, apps) => {
+        const overlay = document.getElementById('folder-overlay');
+        document.getElementById('folder-overlay-title').innerText = title;
+        
+        const grid = document.getElementById('folder-overlay-grid');
+        grid.innerHTML = '';
+        
+        apps.forEach(app => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'app-icon-wrapper';
+          wrapper.style.position = 'relative';
+          wrapper.onclick = () => {
+            closeFolderOverlay();
+            launchApp(app.id);
+          };
+          
+          const icon = document.createElement('div');
+          icon.className = 'app-icon';
+          if (app.icon.startsWith('.') || app.icon.startsWith('http') || app.icon.startsWith('data:')) {
+            icon.style.backgroundImage = `url('${app.icon}')`;
+          } else {
+            icon.style.background = '#2c2c2e';
+            icon.style.display = 'flex';
+            icon.style.alignItems = 'center';
+            icon.style.justifyContent = 'center';
+            icon.style.fontSize = '30px';
+            icon.innerText = app.icon || '🌐';
+          }
+          wrapper.appendChild(icon);
+          
+          const label = document.createElement('span');
+          label.className = 'app-name';
+          label.style.marginTop = '6px';
+          label.innerText = app.name;
+          wrapper.appendChild(label);
+          
+          grid.appendChild(wrapper);
+        });
+        
+        overlay.style.display = 'flex';
+        overlay.offsetHeight;
+        overlay.classList.add('open');
+      };
+      
+      window.closeFolderOverlay = () => {
+        const overlay = document.getElementById('folder-overlay');
+        overlay.classList.remove('open');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 300);
+      };
+      
+      // 3. POINTER DRAG AND DROP ENGINE (PC & MOBILE)
+      
+      let dragPreview = null;
+      let dragSource = null;
+      let autoPageScrollTimer = null;
+      
+      const bindInteractionListeners = (el, appId, pageIdx, appIdx) => {
+        const isDock = pageIdx === -1;
+        
+        const clearLongPress = () => {
+          clearTimeout(longPressTimeout);
+          longPressTimeout = null;
+        };
+        
+        el.addEventListener('pointerdown', (e) => {
+          if (e.button !== 0) return; // Left mouse/touch only
+          
+          // Long press trigger for context menu
+          longPressTimeout = setTimeout(() => {
+            el.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              el.style.transform = 'scale(1)';
+              openAppContextMenu(e.clientX, e.clientY, appId, pageIdx, appIdx);
+            }, 100);
+          }, 800);
+          
+          if (!isWiggleMode) return;
+          
+          // If in wiggle edit mode, initiate pointer dragging directly
+          e.preventDefault();
+          clearLongPress();
+          
+          dragSource = { appId, pageIdx, appIdx, isDock };
+          isDraggingIcon = true;
+          
+          const initialX = e.clientX;
+          const initialY = e.clientY;
+          let dragTriggered = false;
+          
+          const onPointerMove = (moveEvent) => {
+            if (!isDraggingIcon) return;
+            
+            const dx = moveEvent.clientX - initialX;
+            const dy = moveEvent.clientY - initialY;
+            
+            // Wait for 5px movement threshold before creating preview
+            if (!dragTriggered && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+              dragTriggered = true;
+              
+              // Create dragging floating icon preview
+              dragPreview = el.cloneNode(true);
+              dragPreview.style.position = 'fixed';
+              dragPreview.style.zIndex = '99999';
+              dragPreview.style.pointerEvents = 'none';
+              dragPreview.style.transform = 'scale(1.1)';
+              dragPreview.style.opacity = '0.85';
+              const badge = dragPreview.querySelector('.delete-badge');
+              if (badge) badge.style.display = 'none';
+              
+              document.body.appendChild(dragPreview);
+              el.style.opacity = '0.35'; // dim original
+            }
+            
+            if (dragTriggered && dragPreview) {
+              dragPreview.style.left = `${moveEvent.clientX - 38}px`;
+              dragPreview.style.top = `${moveEvent.clientY - 44}px`;
+              
+              const targetEl = document.elementFromPoint(moveEvent.clientX, moveEvent.clientY)?.closest('.app-icon-wrapper');
+              
+              document.querySelectorAll('.app-icon-wrapper').forEach(w => w.classList.remove('drag-over'));
+              if (targetEl && targetEl !== el) {
+                targetEl.classList.add('drag-over');
+              }
+              
+              // Boundary page switching detection
+              const deviceRect = document.getElementById('device').getBoundingClientRect();
+              const relativeX = moveEvent.clientX - deviceRect.left;
+              if (relativeX < 45) {
+                triggerAutoPageScroll(-1);
+              } else if (deviceRect.width - relativeX < 45) {
+                triggerAutoPageScroll(1);
+              } else {
+                clearTimeout(autoPageScrollTimer);
+                autoPageScrollTimer = null;
+              }
+            }
+          };
+          
+          const onPointerUp = (upEvent) => {
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+            
+            clearTimeout(autoPageScrollTimer);
+            autoPageScrollTimer = null;
+            
+            if (!isDraggingIcon) return;
+            isDraggingIcon = false;
+            
+            if (dragPreview) {
+              dragPreview.remove();
+              dragPreview = null;
+            }
+            
+            el.style.opacity = '1';
+            document.querySelectorAll('.app-icon-wrapper').forEach(w => w.classList.remove('drag-over'));
+            
+            const releaseEl = document.elementFromPoint(upEvent.clientX, upEvent.clientY);
+            const targetEl = releaseEl?.closest('.app-icon-wrapper');
+            
+            // Check if dropped directly inside the dock container boundaries
+            const dockEl = document.getElementById('homescreen-dock');
+            const dockRect = dockEl.getBoundingClientRect();
+            const droppedInDock = (
+              upEvent.clientX >= dockRect.left &&
+              upEvent.clientX <= dockRect.right &&
+              upEvent.clientY >= dockRect.top &&
+              upEvent.clientY <= dockRect.bottom
+            );
+            
+            if (targetEl && targetEl !== el) {
+              const targetPageIdx = targetEl.dataset.dock ? -1 : parseInt(targetEl.dataset.page);
+              const targetAppIdx = parseInt(targetEl.dataset.idx);
+              swapApps(dragSource, { pageIdx: targetPageIdx, appIdx: targetAppIdx });
+            } else if (droppedInDock) {
+              // Dropped on empty area in dock -> Append or Swap closest
+              if (dragSource.pageIdx !== -1) {
+                if (dock.length < 4) {
+                  layout[dragSource.pageIdx].splice(dragSource.appIdx, 1);
+                  dock.push(dragSource.appId);
+                } else {
+                  // Find closest dock child and swap
+                  let closestDockIdx = 0;
+                  let minDistance = Infinity;
+                  Array.from(dockEl.children).forEach((child, idx) => {
+                    const childRect = child.getBoundingClientRect();
+                    const distance = Math.abs(upEvent.clientX - (childRect.left + childRect.width / 2));
+                    if (distance < minDistance) {
+                      minDistance = distance;
+                      closestDockIdx = idx;
+                    }
+                  });
+                  const temp = dock[closestDockIdx];
+                  dock[closestDockIdx] = dragSource.appId;
+                  layout[dragSource.pageIdx][dragSource.appIdx] = temp;
+                }
+                
+                if (layout[layout.length - 1].length > 0) {
+                  layout.push([]);
+                }
+                saveState();
+                renderAll();
+              }
+            } else {
+              const pageContainer = releaseEl?.closest('.screen-page');
+              if (pageContainer) {
+                const targetPageIdx = Array.from(scroller.children).indexOf(pageContainer) - 1; // page 0 is widgets
+                if (targetPageIdx >= 0 && targetPageIdx < layout.length) {
+                  if (dragSource.isDock) {
+                    dock.splice(dragSource.appIdx, 1);
+                  } else {
+                    layout[dragSource.pageIdx].splice(dragSource.appIdx, 1);
+                  }
+                  layout[targetPageIdx].push(dragSource.appId);
+                  
+                  if (layout[layout.length - 1].length > 0) {
+                    layout.push([]);
+                  }
+                  
+                  saveState();
+                  renderAll();
+                }
+              }
+            }
+            
+            dragSource = null;
+          };
+          
+          window.addEventListener('pointermove', onPointerMove);
+          window.addEventListener('pointerup', onPointerUp);
+        });
+        
+        el.addEventListener('pointerup', clearLongPress);
+        el.addEventListener('pointerleave', clearLongPress);
+        el.addEventListener('pointercancel', clearLongPress);
+        
+        // Right-Click Laptop/PC Context Menu trigger
+        el.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          clearLongPress();
+          openAppContextMenu(e.clientX, e.clientY, appId, pageIdx, appIdx);
+        });
+        
+        // Click action: launch app
+        el.addEventListener('click', (e) => {
+          if (isWiggleMode) return;
+          clearLongPress();
+          launchApp(appId);
+        });
+      };
+      
+      const triggerAutoPageScroll = (dir) => {
+        if (autoPageScrollTimer) return;
+        autoPageScrollTimer = setTimeout(() => {
+          let target = currentI + dir;
+          if (target >= 1 && target <= layout.length) {
+            currentI = target;
+            updateScrollerPosition(currentI);
+            renderAll();
+          }
+          autoPageScrollTimer = null;
+        }, 500); // 0.5s hold to slide page
+      };
+      
+      const swapApps = (source, target) => {
+        if (source.pageIdx === -1 && target.pageIdx === -1) {
+          const temp = dock[source.appIdx];
+          dock[source.appIdx] = dock[target.appIdx];
+          dock[target.appIdx] = temp;
+        } else if (source.pageIdx !== -1 && target.pageIdx !== -1) {
+          const temp = layout[source.pageIdx][source.appIdx];
+          layout[source.pageIdx][source.appIdx] = layout[target.pageIdx][target.appIdx];
+          layout[target.pageIdx][target.appIdx] = temp;
+        } else {
+          if (source.pageIdx === -1) {
+            const temp = dock[source.appIdx];
+            dock[source.appIdx] = layout[target.pageIdx][target.appIdx];
+            layout[target.pageIdx][target.appIdx] = temp;
+          } else {
+            const temp = layout[source.pageIdx][source.appIdx];
+            layout[source.pageIdx][source.appIdx] = dock[target.appIdx];
+            dock[target.appIdx] = temp;
+          }
+        }
+        
+        if (layout[layout.length - 1].length > 0) {
+          layout.push([]);
+        }
+        
+        saveState();
+        renderAll();
+      };
+      
+      // Global empty screen context menu
+      document.querySelector('.screen-container').oncontextmenu = (e) => {
+        if (e.target.closest('.app-icon-wrapper, .library-folder-card, .modal-box')) return;
+        e.preventDefault();
+        openGlobalContextMenu(e.clientX, e.clientY);
+      };
+      
+      const openGlobalContextMenu = (clientX, clientY) => {
+        closeContextMenus();
+        const menu = document.getElementById('desktop-menu');
+        const screenRect = document.querySelector('.screen-container').getBoundingClientRect();
+        
+        menu.style.display = 'flex';
+        menu.style.left = `${clientX - screenRect.left}px`;
+        menu.style.top = `${clientY - screenRect.top}px`;
+      };
+      
+      const openAppContextMenu = (clientX, clientY, appId, pageIdx, appIdx) => {
+        closeContextMenus();
+        const menu = document.getElementById('app-menu');
+        const screenRect = document.querySelector('.screen-container').getBoundingClientRect();
+        
+        document.getElementById('ctx-open-app').onclick = () => {
+          closeContextMenus();
+          launchApp(appId);
+        };
+        
+        const deleteBtn = document.getElementById('ctx-delete-app');
+        if (allApps[appId].custom && appId !== 'settings') {
+          deleteBtn.style.display = 'flex';
+          deleteBtn.onclick = () => {
+            closeContextMenus();
+            deleteApp(pageIdx, appIdx, appId);
+          };
+        } else {
+          deleteBtn.style.display = 'none';
+        }
+        
+        menu.style.display = 'flex';
+        menu.style.left = `${clientX - screenRect.left}px`;
+        menu.style.top = `${clientY - screenRect.top}px`;
+      };
+      
+      const closeContextMenus = () => {
+        document.getElementById('desktop-menu').style.display = 'none';
+        document.getElementById('app-menu').style.display = 'none';
+      };
+      
+      window.addEventListener('click', () => {
+        closeContextMenus();
+      });
+      
+      // Swipe gestures between main pages
+      let isSwiping = false;
+      let startSwipeX = 0;
+      let startSwipeTime = 0;
+      let targetI = 1;
+      
+      const scrollerContainer = document.querySelector('.screen-scroller-container');
+      const scroller = document.getElementById('scroller');
+      
+      scrollerContainer.addEventListener('pointerdown', (e) => {
+        if (isDraggingIcon) return; // Allow page swipes during wiggle mode unless dragging
+        if (e.target.closest('button, input, a, .app-icon, .delete-badge, .modal-box, .custom-context-menu')) return;
+        
+        isSwiping = true;
+        startSwipeX = e.clientX;
+        startSwipeTime = Date.now();
+        scroller.style.transition = 'none';
+        const blurOverlay = document.querySelector('.blur-overlay');
+        if (blurOverlay) blurOverlay.style.transition = 'none';
+      });
+      
+      window.addEventListener('pointermove', (e) => {
+        if (!isSwiping) return;
+        const dx = e.clientX - startSwipeX;
+        const pageWidth = scrollerContainer.getBoundingClientRect().width;
+        const delta = dx / pageWidth;
+        targetI = currentI - delta;
+        
+        const maxI = layout.length + 1;
+        if (targetI < 0) targetI *= 0.3;
+        if (targetI > maxI) targetI = maxI + (targetI - maxI) * 0.3;
+        
+        updateScrollerPosition(targetI);
+      });
+      
+      window.addEventListener('pointerup', (e) => {
+        if (!isSwiping) return;
+        isSwiping = false;
+        
+        const dx = e.clientX - startSwipeX;
+        const dt = Date.now() - startSwipeTime;
+        const velocity = dx / dt;
+        const maxI = layout.length + 1;
+        
+        let newI = currentI;
+        if (Math.abs(velocity) > 0.2) {
+          if (velocity > 0 && currentI > 0) newI = currentI - 1;
+          else if (velocity < 0 && currentI < maxI) newI = currentI + 1;
+        } else {
+          newI = Math.round(targetI);
+        }
+        newI = Math.max(0, Math.min(maxI, newI));
+        currentI = newI;
+        
+        scroller.style.transition = 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+        const blurOverlay = document.querySelector('.blur-overlay');
+        if (blurOverlay) {
+          blurOverlay.style.transition = 'backdrop-filter 0.3s cubic-bezier(0.22, 1, 0.36, 1), -webkit-backdrop-filter 0.3s cubic-bezier(0.22, 1, 0.36, 1)';
+        }
+        
+        updateScrollerPosition(currentI);
+        
+        const dock = document.getElementById('homescreen-dock');
+        const dots = document.getElementById('page-indicators');
+        if (currentI === 0 || currentI === layout.length + 1) {
+          dock.classList.add('hidden');
+          dots.classList.add('hidden');
+        } else {
+          dock.classList.remove('hidden');
+          dots.classList.remove('hidden');
+        }
+        
+        renderPageDots();
+      });
+      
+      const updateScrollerPosition = (val) => {
+        scroller.style.transform = `translateX(${val * -100}%)`;
+        
+        const blurOverlay = document.querySelector('.blur-overlay');
+        if (blurOverlay) {
+          const maxI = totalPages - 1;
+          let blurAmount = 0;
+          if (val < 1) {
+            blurAmount = (1 - val) * 30; // Max 30px blur at page 0 (widgets)
+          } else if (val > maxI - 1) {
+            blurAmount = (val - (maxI - 1)) * 30; // Max 30px blur at library page (maxI)
+          }
+          // Between 1 and maxI - 1 (all homescreen pages), blur is 0px
+          blurOverlay.style.backdropFilter = `blur(${blurAmount}px)`;
+          blurOverlay.style.webkitBackdropFilter = `blur(${blurAmount}px)`;
+        }
+      };
+      
+      // 4. APP LAUNCHING AND POP-OVERS
+      
+      window.launchApp = function(appId) {
+        if (isWiggleMode) return;
+        closeContextMenus();
+        
+        const launcher = document.querySelector(`[data-app-id="${appId}"]`);
+        const rect = launcher ? launcher.getBoundingClientRect() : { left: 195, top: 422, width: 60, height: 60 };
+        const screen = document.querySelector('.screen-container');
+        const screenRect = screen.getBoundingClientRect();
+        
+        const x = rect.left - screenRect.left;
+        const y = rect.top - screenRect.top;
+        const w = rect.width;
+        const h = rect.height;
+        
+        const popover = document.getElementById(`app-popover-${appId}`);
+        if (popover) {
+          popover.style.display = 'flex';
+          popover.style.setProperty('--x', `${x}px`);
+          popover.style.setProperty('--y', `${y}px`);
+          popover.style.setProperty('--w', `${w}px`);
+          popover.style.setProperty('--h', `${h}px`);
+          
+          popover.offsetHeight;
+          popover.classList.add('open');
+          
+          const iframe = popover.querySelector('iframe');
+          const app = allApps[appId];
+          if (iframe && app) {
+            let targetUrl = app.url;
+            if (app.htmlContent) {
+              const blob = new Blob([app.htmlContent], { type: 'text/html;charset=utf-8' });
+              targetUrl = URL.createObjectURL(blob);
+            }
+            iframe.src = targetUrl;
+          }
+        }
+      };
+      
+      window.closeApp = function(appId) {
+        const popover = document.getElementById(`app-popover-${appId}`);
+        if (popover) {
+          popover.classList.remove('open');
+          setTimeout(() => {
+            if (!popover.classList.contains('open')) {
+              popover.style.display = 'none';
+              const iframe = popover.querySelector('iframe');
+              if (iframe) iframe.src = 'about:blank';
+            }
+          }, 380);
+        }
+      };
+      
+      const generateIframePopovers = () => {
+        const container = document.getElementById('popovers-container');
+        container.innerHTML = '';
+        
+        Object.keys(allApps).forEach(appId => {
+          const app = allApps[appId];
+          const div = document.createElement('div');
+          div.id = `app-popover-${appId}`;
+          div.className = 'app-popover';
+          
+          div.innerHTML = `
+            <div class="app-content">
+              <iframe class="app-iframe" src="about:blank" allow="camera; microphone; geolocation" scrolling="yes"></iframe>
+              <button class="home-indicator" onclick="closeApp('${appId}')"></button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      };
+      
+      // 5. WIGGLE EDIT-MODE CONTROLS
+      
+      window.enterWiggleMode = () => {
+        isWiggleMode = true;
+        document.getElementById('edit-bar').classList.add('active');
+        
+        if (layout.length === 0 || layout[layout.length - 1].length > 0) {
+          layout.push([]);
+        }
+        
+        renderAll();
+      };
+      
+      window.exitWiggleMode = () => {
+        isWiggleMode = false;
+        document.getElementById('edit-bar').classList.remove('active');
+        
+        layout = layout.filter(page => page.length > 0);
+        if (layout.length === 0) layout = [[]];
+        
+        if (currentI > layout.length) {
+          currentI = layout.length;
+        }
+        
+        saveState();
+        renderAll();
+      };
+      
+      window.promptWallpaperURL = () => {
+        const url = prompt("Enter Wallpaper Image URL:", wallpaper);
+        if (url) {
+          wallpaper = url;
+          localStorage.setItem('homescreen-wallpaper', url);
+          renderAll();
+        }
+      };
+      
+      // 6. ADD APP MODAL & ITUNES / FILE COMPILING
+      
+      let iconMode = 'url'; // 'url', 'upload', 'emoji'
+      let srcMode = 'url';  // 'url', 'upload', 'html'
+      
+      // iTunes Search API helper
+      let searchTimeout;
+      window.searchAppStore = (query) => {
+        clearTimeout(searchTimeout);
+        const resultsDiv = document.getElementById('app-store-results');
+        if (!query.trim()) {
+          resultsDiv.style.display = 'none';
+          return;
+        }
+        searchTimeout = setTimeout(() => {
+          fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=software&limit=5`)
+            .then(res => res.json())
+            .then(data => {
+              resultsDiv.innerHTML = '';
+              if (data.results && data.results.length > 0) {
+                resultsDiv.style.display = 'flex';
+                data.results.forEach(item => {
+                  const div = document.createElement('div');
+                  div.className = 'app-search-result-item';
+                  div.innerHTML = `
+                    <img src="${item.artworkUrl60}">
+                    <span>${item.trackName}</span>
+                  `;
+                  div.onclick = () => {
+                    document.getElementById('modal-app-name').value = item.trackName;
+                    switchIconMode('url');
+                    const highResIcon = item.artworkUrl100.replace('100x100bb', '512x512bb');
+                    document.getElementById('modal-app-icon-url').value = highResIcon;
+                    resultsDiv.style.display = 'none';
+                    document.getElementById('modal-app-store-search').value = '';
+                  };
+                  resultsDiv.appendChild(div);
+                });
+              } else {
+                resultsDiv.style.display = 'none';
+              }
+            }).catch(() => {
+              resultsDiv.style.display = 'none';
+            });
+        }, 300);
+      };
+      
+      // Multi-file HTML/CSS/JS directory compiler
+      const compileFolder = (files) => {
+        return new Promise((resolve, reject) => {
+          const filePromises = files.map(file => {
+            return new Promise((res) => {
+              const reader = new FileReader();
+              if (file.type.startsWith('image/') || file.name.endsWith('.png') || file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.gif')) {
+                reader.readAsDataURL(file);
+              } else {
+                reader.readAsText(file);
+              }
+              reader.onload = (e) => {
+                const path = file.webkitRelativePath.split('/').slice(1).join('/');
+                res({ path: path || file.name, content: e.target.result, type: file.type });
+              };
+            });
+          });
+          
+          Promise.all(filePromises).then(results => {
+            const filesMap = {};
+            results.forEach(r => {
+              filesMap[r.path] = r;
+            });
+            
+            const htmlFile = results.find(r => r.path.toLowerCase() === 'index.html' || r.path.toLowerCase().endsWith('.html'));
+            if (!htmlFile) return reject('No index.html found in folder!');
+            
+            let htmlContent = htmlFile.content;
+            
+            // Replace css links
+            htmlContent = htmlContent.replace(/<link[^>]*rel="stylesheet"[^>]*href="([^"]*)"[^>]*>/gi, (match, href) => {
+              const cleanedHref = href.replace(/^\.\//, '');
+              const cssFile = filesMap[cleanedHref];
+              if (cssFile) {
+                return '<style>' + cssFile.content + '</style>';
+              }
+              return match;
+            });
+            
+            // Replace script tags using RegExp constructor to avoid inline closing tags
+            const scriptRegex = new RegExp('<script[^>]*src="([^"]*)"[^>]*><\\/script>', 'gi');
+            htmlContent = htmlContent.replace(scriptRegex, (match, src) => {
+              const cleanedSrc = src.replace(/^\.\//, '');
+              const jsFile = filesMap[cleanedSrc];
+              if (jsFile) {
+                return '<script>' + jsFile.content + '</' + 'script>';
+              }
+              return match;
+            });
+            
+            // Replace image tags
+            htmlContent = htmlContent.replace(/<img[^>]*src="([^"]*)"[^>]*>/gi, (match, src) => {
+              const cleanedSrc = src.replace(/^\.\//, '');
+              const imgFile = filesMap[cleanedSrc];
+              if (imgFile) {
+                return `<img src="${imgFile.content}">`;
+              }
+              return match;
+            });
+            
+            resolve(htmlContent);
+          }).catch(reject);
+        });
+      };
+      
+      window.openAddAppModal = () => {
+        document.getElementById('add-app-modal').classList.add('open');
+      };
+      
+      window.closeAddAppModal = () => {
+        document.getElementById('add-app-modal').classList.remove('open');
+        document.getElementById('modal-app-name').value = '';
+        document.getElementById('modal-app-icon-url').value = '';
+        document.getElementById('modal-app-icon-file').value = '';
+        document.getElementById('modal-app-icon-emoji').value = '';
+        document.getElementById('modal-app-src-url').value = '';
+        document.getElementById('modal-app-src-file').value = '';
+        document.getElementById('modal-app-src-folder').value = '';
+        document.getElementById('modal-app-src-html').value = '';
+        document.getElementById('modal-app-store-search').value = '';
+        document.getElementById('app-store-results').style.display = 'none';
+      };
+      
+      window.switchIconMode = (mode) => {
+        iconMode = mode;
+        document.querySelectorAll('#icon-tab-url, #icon-tab-upload, #icon-tab-emoji').forEach(b => b.classList.remove('active'));
+        document.getElementById(`icon-tab-${mode}`).classList.add('active');
+        
+        document.getElementById('modal-app-icon-url').style.display = mode === 'url' ? 'block' : 'none';
+        document.getElementById('modal-app-icon-file').style.display = mode === 'upload' ? 'block' : 'none';
+        document.getElementById('modal-app-icon-emoji').style.display = mode === 'emoji' ? 'block' : 'none';
+      };
+      
+      window.switchSrcMode = (mode) => {
+        srcMode = mode;
+        document.querySelectorAll('#src-tab-url, #src-tab-upload, #src-tab-html').forEach(b => b.classList.remove('active'));
+        document.getElementById(`src-tab-${mode}`).classList.add('active');
+        
+        document.getElementById('modal-app-src-url').style.display = mode === 'url' ? 'block' : 'none';
+        document.getElementById('modal-app-src-upload-wrapper').style.display = mode === 'upload' ? 'flex' : 'none';
+        document.getElementById('modal-app-src-html').style.display = mode === 'html' ? 'block' : 'none';
+      };
+      
+      window.saveCustomApp = () => {
+        const name = document.getElementById('modal-app-name').value.trim();
+        if (!name) return alert('Enter app name!');
+        
+        const appId = 'custom-' + Date.now();
+        
+        let iconValue = '🌐';
+        if (iconMode === 'url') {
+          iconValue = document.getElementById('modal-app-icon-url').value.trim() || '🌐';
+          finalizeAppSave(appId, name, iconValue);
+        } else if (iconMode === 'emoji') {
+          iconValue = document.getElementById('modal-app-icon-emoji').value.trim() || '🌐';
+          finalizeAppSave(appId, name, iconValue);
+        } else if (iconMode === 'upload') {
+          const file = document.getElementById('modal-app-icon-file').files[0];
+          if (!file) {
+            finalizeAppSave(appId, name, '🌐');
+          } else {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              iconValue = e.target.result;
+              finalizeAppSave(appId, name, iconValue);
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      };
+      
+      const finalizeAppSave = (appId, name, icon) => {
+        let appUrl = '';
+        let appHtml = '';
+        
+        if (srcMode === 'url') {
+          appUrl = document.getElementById('modal-app-src-url').value.trim();
+          if (!appUrl) return alert('Enter website URL!');
+          saveAppConfig(appId, name, icon, appUrl, '');
+        } else if (srcMode === 'html') {
+          appHtml = document.getElementById('modal-app-src-html').value;
+          if (!appHtml.trim()) return alert('Paste HTML content!');
+          saveAppConfig(appId, name, icon, '', appHtml);
+        } else if (srcMode === 'upload') {
+          const fileInput = document.getElementById('modal-app-src-file');
+          const folderInput = document.getElementById('modal-app-src-folder');
+          
+          if (folderInput.files.length > 0) {
+            compileFolder(Array.from(folderInput.files)).then(compiledHtml => {
+              saveAppConfig(appId, name, icon, '', compiledHtml);
+            }).catch(err => {
+              alert(err);
+            });
+          } else if (fileInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              saveAppConfig(appId, name, icon, '', e.target.result);
+            };
+            reader.readAsText(fileInput.files[0]);
+          } else {
+            alert('Please upload a single HTML file or select a webapp folder!');
+          }
+        }
+      };
+      
+      const saveAppConfig = (appId, name, icon, url, html) => {
+        allApps[appId] = {
+          id: appId,
+          name: name,
+          icon: icon,
+          url: url,
+          htmlContent: html,
+          custom: true
+        };
+        
+        layout[layout.length - 1].push(appId);
+        
+        if (isWiggleMode && layout[layout.length - 1].length > 0) {
+          layout.push([]);
+        }
+        
+        saveState();
+        closeAddAppModal();
+        renderAll();
+      };
+      
+      const deleteApp = (pageIdx, appIdx, appId) => {
+        if (appId === 'settings') return; // Cannot delete settings app
+        if (confirm(`Delete app "${allApps[appId].name}"?`)) {
+          if (pageIdx === -1) {
+            dock.splice(appIdx, 1);
+          } else {
+            layout[pageIdx].splice(appIdx, 1);
+          }
+          delete allApps[appId];
+          saveState();
+          renderAll();
+        }
+      };
+      
+      // 7. INITIALIZATION ON LOAD
+      
+      const initSystem = () => {
+        loadState();
+        renderAll();
+        
+        const updateStatusBarTime = () => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+          document.getElementById('inner-time').innerText = timeStr;
+        };
+        setInterval(updateStatusBarTime, 1000);
+        updateStatusBarTime();
+        
+        // Listen for message events sent by Settings app iframe
+        window.addEventListener('message', (e) => {
+          if (e.data.type === 'TOGGLE_AIRPLANE') {
+            const airplane = document.getElementById('status-airplane');
+            if (airplane) airplane.style.display = e.data.value ? 'inline' : 'none';
+          } else if (e.data.type === 'SET_WALLPAPER_PRESET') {
+            wallpaper = e.data.value;
+            localStorage.setItem('homescreen-wallpaper', wallpaper);
+            renderAll();
+          } else if (e.data.type === 'RESTORE_ALL') {
+            localStorage.clear();
+            loadState();
+            renderAll();
+          }
+        });
+        
+        // Restore initial settings app values (e.g. airplane status)
+        const isAirplane = localStorage.getItem('setting-airplane') === 'true';
+        const airplane = document.getElementById('status-airplane');
+        if (airplane) airplane.style.display = isAirplane ? 'inline' : 'none';
+        
+        // Resize observer scales device mockup centered
+        const device = document.getElementById('device');
+        const wrapper = document.getElementById('wrapper');
+        const ro = new ResizeObserver(() => {
+          const padding = 40;
+          const xscale = (wrapper.clientWidth - padding) / 414;
+          const yscale = (wrapper.clientHeight - padding) / 868;
+          const scale = Math.min(xscale, yscale);
+          device.style.transform = `scale(${scale})`;
+        });
+        ro.observe(wrapper);
+      };
+      
+      window.addEventListener('DOMContentLoaded', initSystem);
+    </script>
+  </body>
+</html>

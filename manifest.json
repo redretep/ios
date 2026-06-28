@@ -1,0 +1,8 @@
+{
+  "name": "Homescreen",
+  "short_name": "Homescreen",
+  "description": "An example home screen application template",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000"
+}
